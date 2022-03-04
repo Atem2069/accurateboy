@@ -1,0 +1,97 @@
+#include"Bus.h"
+
+Bus::Bus()
+{
+	m_inBootRom = true;
+}
+
+Bus::~Bus()
+{
+
+}
+
+uint8_t Bus::read(uint16_t address)
+{
+	if (m_inBootRom && address <= 0xFF)
+		return m_bootRom[address];
+
+	if ((address <= 0x7FFF) || (address >= 0xA000 && address <= 0xBFFF))
+	{
+		//cartridge handles it
+	}
+	if ((address >= 0x8000 && address <= 0x9FFF) || (address >= 0xFE00 && address <= 0xFE9F))
+	{
+		//ppu handles read
+	}
+	if (address <= 0xC000 && address <= 0xFDFF)
+	{
+		if (address > 0xDFFF)
+			address -= 0xE000;
+		else
+			address -= 0xC000;
+
+		return m_WRAM[address];
+	}
+	if (address >= 0xFF80 && address <= 0xFFFE)
+	{
+		return m_HRAM[address - 0xFF80];
+	}
+	if (address == 0xFFFF)
+	{
+		//interrupt handler manages it
+	}
+
+	if (address >= 0xFF00 && address <= 0xFF7F)
+	{
+		switch (address)
+		{
+		case REG_LCDC: case REG_STAT: case REG_SCY: case REG_SCX: case REG_WY: case REG_WX: case REG_LY: case REG_LYC:
+			return 0xFF; break;	//todo: ppu
+		}
+	}
+
+
+	return 0xFF;
+}
+
+void Bus::write(uint16_t address, uint8_t value)
+{
+	if ((address <= 0x7FFF) || (address >= 0xA000 && address <= 0xBFFF))
+	{
+		//cartridge handles it
+	}
+	if ((address >= 0x8000 && address <= 0x9FFF) || (address >= 0xFE00 && address <= 0xFE9F))
+	{
+		//ppu handles read
+	}
+	if (address <= 0xC000 && address <= 0xFDFF)
+	{
+		if (address > 0xDFFF)
+			address -= 0xE000;
+		else
+			address -= 0xC000;
+
+		m_WRAM[address] = value;
+	}
+	if (address >= 0xFF80 && address <= 0xFFFE)
+	{
+		m_HRAM[address - 0xFF80] = value;
+	}
+	if (address == 0xFFFF)
+	{
+		//interrupt handler manages it
+	}
+
+	if (address >= 0xFF00 && address <= 0xFF7F)
+	{
+		switch (address)
+		{
+		case REG_LCDC: case REG_STAT: case REG_SCY: case REG_SCX: case REG_WY: case REG_WX: case REG_LY: case REG_LYC:
+			(void)0; break;	//todo: ppu
+		case 0xFF50:		//boot rom lockout
+			m_inBootRom = false; break;
+		}
+	}
+
+
+}
