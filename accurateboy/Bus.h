@@ -1,11 +1,13 @@
 #include"Logger.h"
 #include"dmgRegisters.h"
+#include"InterruptManager.h"
+
 #include<iostream>
 #include<array>
 class Bus
 {
 public:
-	Bus();
+	Bus(std::shared_ptr<InterruptManager>& interruptManager);
 	~Bus();
 
 	uint8_t read(uint16_t address);
@@ -15,4 +17,6 @@ private:
 	bool m_inBootRom;
 	std::array<uint8_t, 8192> m_WRAM;
 	std::array<uint8_t, 128> m_HRAM;
+
+	std::shared_ptr<InterruptManager> m_interruptManager;
 };
