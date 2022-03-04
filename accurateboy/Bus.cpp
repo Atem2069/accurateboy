@@ -100,3 +100,8 @@ void Bus::write(uint16_t address, uint8_t value)
 
 
 }
+
+void Bus::tick()
+{
+	//ticks all components
+}

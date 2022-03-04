@@ -18,7 +18,7 @@ void CPU::step()
 	if (!m_halted)
 		m_executeInstruction();
 	else
-		m_cycleCount++;
+		m_bus->tick();
 
 	InterruptType queuedInt = m_interruptManager->getActiveInterrupt();
 	if (queuedInt != InterruptType::None)
@@ -657,8 +657,8 @@ void CPU::m_setSubtractFlag(bool value)
 
 uint8_t CPU::m_fetch()
 {
-	uint8_t val = m_bus->read(PC);
-	PC++;
+	uint8_t val = m_bus->read(PC++);
+	m_bus->tick();
 	return val;
 }
 
@@ -668,14 +668,18 @@ void CPU::m_pushToStack(uint16_t val)
 	uint8_t lowByte = (val & 0x00FF);
 
 	m_bus->write(SP.reg - 1, highByte);
+	m_bus->tick();
 	m_bus->write(SP.reg - 2, lowByte);
+	m_bus->tick();
 	SP.reg -= 2;
 }
 
 uint16_t CPU::m_popFromStack()
 {
 	uint8_t lowByte = m_bus->read(SP.reg);
+	m_bus->tick();
 	uint8_t highByte = m_bus->read(SP.reg + 1);
+	m_bus->tick();
 	SP.reg += 2;
 	uint16_t val = (((uint16_t)highByte) << 8) | lowByte;
 	return val;
@@ -685,59 +689,56 @@ void CPU::_loadImmPairRegister(Register& reg)
 {
 	reg.low = m_fetch();
 	reg.high = m_fetch();
-	m_cycleCount += 3;
 }
 
 void CPU::_loadImmRegister(uint8_t& reg)
 {
 	reg = m_fetch();
-	m_cycleCount += 2;
 }
 
 void CPU::_loadImmFromRegister(uint8_t& regA, uint8_t& regB)
 {
 	regA = regB;
-	m_cycleCount += 1;
 }
 
 void CPU::_loadDirectFromPairRegister(uint8_t& regA, Register& regB)
 {
 	regA = m_bus->read(regB.reg);
-	m_cycleCount += 2;
+	m_bus->tick();
 }
 
 void CPU::_loadDirectFromPairRegisterInc(uint8_t& regA, Register& regB)
 {
 	regA = m_bus->read(regB.reg);
+	m_bus->tick();
 	regB.reg++;
-	m_cycleCount += 2;
 }
 
 void CPU::_loadDirectFromPairRegisterDec(uint8_t& regA, Register& regB)
 {
 	regA = m_bus->read(regB.reg);
+	m_bus->tick();
 	regB.reg--;
-	m_cycleCount += 2;
 }
 
 void CPU::_storeRegisterAtPairRegister(Register& regA, uint8_t& regB)
 {
 	m_bus->write(regA.reg, regB);
-	m_cycleCount += 2;
+	m_bus->tick();
 }
 
 void CPU::_storeRegisterAtPairRegisterInc(Register& regA, uint8_t& regB)
 {
 	m_bus->write(regA.reg, regB);
+	m_bus->tick();
 	regA.reg++;
-	m_cycleCount += 2;
 }
 
 void CPU::_storeRegisterAtPairRegisterDec(Register& regA, uint8_t& regB)
 {
 	m_bus->write(regA.reg, regB);
+	m_bus->tick();
 	regA.reg--;
-	m_cycleCount += 2;
 }
 
 void CPU::_storePairRegisterAtAddress(Register& reg)
@@ -747,8 +748,9 @@ void CPU::_storePairRegisterAtAddress(Register& reg)
 	uint16_t addr = ((uint16_t)memHigh << 8) | memLow;
 
 	m_bus->write(addr, reg.low);
+	m_bus->tick();
 	m_bus->write(addr + 1, reg.high);
-	m_cycleCount += 5;
+	m_bus->tick();
 }
 
 void CPU::_storeRegisterAtAddress(uint8_t& reg)
@@ -757,7 +759,7 @@ void CPU::_storeRegisterAtAddress(uint8_t& reg)
 	uint8_t memHigh = m_fetch();
 	uint16_t addr = ((uint16_t)memHigh << 8) | memLow;
 	m_bus->write(addr, reg);
-	m_cycleCount += 4;
+	m_bus->tick();
 }
 
 void CPU::_loadRegisterFromAddress(uint8_t& reg)
@@ -766,50 +768,51 @@ void CPU::_loadRegisterFromAddress(uint8_t& reg)
 	uint8_t memHigh = m_fetch();
 	uint16_t addr = ((uint16_t)memHigh << 8) | memLow;
 	reg = m_bus->read(addr);
-	m_cycleCount += 4;
+	m_bus->tick();
 }
 
 void CPU::_storeOperandAtPairAddress(Register& reg)
 {
-	m_bus->write(reg.reg, m_fetch());
-	m_cycleCount += 3;
+	m_bus->write(reg.reg, m_fetch());	//fetch ticks
+	m_bus->tick();						//then tick again = 3 ticks total (fetch,fetch,write)
 }
 
 void CPU::_storeRegisterInHRAM(uint8_t& regDst, uint8_t& regSrc)
 {
 	m_bus->write(0xFF00 + regDst, regSrc);	//destination register contains index from 0xFF00 to write to HRAM
-	m_cycleCount += 2;
+	m_bus->tick();
 }
 
 void CPU::_loadFromHRAM(uint8_t& regDst, uint8_t& regSrcIdx)
 {
 	regDst = m_bus->read(0xFF00 + regSrcIdx);
-	m_cycleCount += 2;
+	m_bus->tick();
 }
 
 void CPU::_storeRegisterInHRAMImm(uint8_t& reg)
 {
 	uint16_t addr = (uint16_t)m_fetch();
 	m_bus->write(0xFF00 + addr, reg);
-	m_cycleCount += 3;
+	m_bus->tick();
 }
 
 void CPU::_loadFromHRAMImm(uint8_t& reg)
 {
 	uint16_t addr = (uint16_t)m_fetch();
 	reg = m_bus->read(0xFF00 + addr);
-	m_cycleCount += 3;
+	m_bus->tick();
 }
 
 void CPU::_incrementPairRegister(Register& reg)
 {
 	reg.reg++;
-	m_cycleCount += 2;
+	m_bus->tick();
 }
 
 void CPU::_incrementPairAddress(Register& reg)
 {
 	uint8_t val = m_bus->read(reg.reg);
+	m_bus->tick();
 	 
 	m_setHalfCarryFlag(((val & 0x0F) + (1 & 0x0F)) > 0x0F);
 	val += 1;
@@ -817,7 +820,7 @@ void CPU::_incrementPairAddress(Register& reg)
 	m_setSubtractFlag(false);
 
 	m_bus->write(reg.reg, val);
-	m_cycleCount += 3;
+	m_bus->tick();
 }
 
 void CPU::_incrementRegister(uint8_t& reg)
@@ -826,17 +829,17 @@ void CPU::_incrementRegister(uint8_t& reg)
 	reg += 1;
 	m_setZeroFlag(!reg);
 	m_setSubtractFlag(false);
-	m_cycleCount++;
 }
 void CPU::_decrementPairRegister(Register& reg)
 {
 	reg.reg--;
-	m_cycleCount += 2;
+	m_bus->tick();
 }
 
 void CPU::_decrementPairAddress(Register& reg)
 {
 	uint8_t val = m_bus->read(reg.reg);
+	m_bus->tick();
 
 	val--;
 	m_setHalfCarryFlag((val & 0x0f) == 0x0f);
@@ -844,7 +847,7 @@ void CPU::_decrementPairAddress(Register& reg)
 	m_setSubtractFlag(true);
 
 	m_bus->write(reg.reg, val);
-	m_cycleCount += 3;
+	m_bus->tick();
 }
 
 void CPU::_decrementRegister(uint8_t& reg)
@@ -853,7 +856,6 @@ void CPU::_decrementRegister(uint8_t& reg)
 	m_setHalfCarryFlag((reg & 0x0f) == 0x0f);
 	m_setZeroFlag(!reg);
 	m_setSubtractFlag(true);
-	m_cycleCount++;
 }
 
 void CPU::_addPairRegisters(Register& regA, Register& regB)
@@ -862,7 +864,7 @@ void CPU::_addPairRegisters(Register& regA, Register& regB)
 	m_setCarryFlag(((int)regA.reg + (int)regB.reg) > 0xffff);
 	m_setSubtractFlag(false);
 	regA.reg += regB.reg;
-	m_cycleCount += 2;
+	m_bus->tick();	//not sure about this.
 }
 
 void CPU::_addSignedValueToPairRegister(Register& reg)
@@ -874,14 +876,15 @@ void CPU::_addSignedValueToPairRegister(Register& reg)
 	m_setSubtractFlag(false);
 	m_setHalfCarryFlag(((regInitial ^ val ^ (reg.reg & 0xFFFF)) & 0x10) == 0x10);	//black magic 16-bit half carry
 	m_setCarryFlag(((regInitial ^ val ^ (reg.reg & 0xFFFF)) & 0x100) == 0x100);
-	m_cycleCount += 4;
+	m_bus->tick();	//2 internal ticks, might be wrong? gbops says two internals (i.e. SP.lower written, then SP.upper)
+	m_bus->tick();
 }
 
 void CPU::_jumpRelative()
 {
 	int8_t disp = (int8_t)m_fetch();	//cast unsigned int value to signed int value as displacement is signed/relative
 	PC += disp;
-	m_cycleCount += 3;
+	m_bus->tick();
 }
 
 void CPU::_jumpRelativeIfZeroNotSet()	
@@ -891,7 +894,7 @@ void CPU::_jumpRelativeIfZeroNotSet()
 	else
 	{
 		PC++;
-		m_cycleCount += 2;
+		m_bus->tick();	//if branch not taken, then it's 8 t cycles
 	}
 }
 
@@ -902,7 +905,7 @@ void CPU::_jumpRelativeIfZeroSet()
 	else
 	{
 		PC++;
-		m_cycleCount += 2;
+		m_bus->tick();
 	}
 }
 
@@ -913,7 +916,7 @@ void CPU::_jumpRelativeIfCarryNotSet()
 	else
 	{
 		PC++;
-		m_cycleCount += 2;
+		m_bus->tick();
 	}
 }
 
@@ -924,7 +927,7 @@ void CPU::_jumpRelativeIfCarrySet()
 	else
 	{
 		PC++;
-		m_cycleCount += 2;
+		m_bus->tick();
 	}
 }
 
@@ -934,8 +937,7 @@ void CPU::_jumpAbsolute()
 	uint8_t byteHigh = m_fetch();
 	uint16_t addr = ((uint16_t)byteHigh << 8) | byteLow;
 	PC = addr;
-
-	m_cycleCount += 4;
+	m_bus->tick();
 }
 
 void CPU::_jumpAbsoluteIfZeroNotSet()
@@ -945,7 +947,8 @@ void CPU::_jumpAbsoluteIfZeroNotSet()
 	else
 	{
 		PC += 2;
-		m_cycleCount += 3;
+		m_bus->tick();
+		m_bus->tick();
 	}
 }
 
@@ -956,7 +959,8 @@ void CPU::_jumpAbsoluteIfZeroSet()
 	else
 	{
 		PC += 2;
-		m_cycleCount += 3;
+		m_bus->tick();
+		m_bus->tick();
 	}
 }
 
@@ -967,7 +971,8 @@ void CPU::_jumpAbsoluteIfCarryNotSet()
 	else
 	{
 		PC += 2;
-		m_cycleCount += 3;
+		m_bus->tick();
+		m_bus->tick();
 	}
 }
 
@@ -978,7 +983,8 @@ void CPU::_jumpAbsoluteIfCarrySet()
 	else
 	{
 		PC += 2;
-		m_cycleCount += 3;
+		m_bus->tick();
+		m_bus->tick();
 	}
 }
 
@@ -990,8 +996,8 @@ void CPU::_call()
 
 	m_pushToStack(PC);
 	PC = addr;
+	m_bus->tick();
 
-	m_cycleCount += 6;
 }
 
 void CPU::_callIfZeroNotSet()
@@ -1001,7 +1007,8 @@ void CPU::_callIfZeroNotSet()
 	else
 	{
 		PC += 2;
-		m_cycleCount += 3;
+		m_bus->tick();
+		m_bus->tick();
 	}
 }
 
@@ -1012,7 +1019,8 @@ void CPU::_callIfZeroSet()
 	else
 	{
 		PC += 2;
-		m_cycleCount += 3;
+		m_bus->tick();
+		m_bus->tick();
 	}
 }
 
@@ -1023,7 +1031,8 @@ void CPU::_callIfCarryNotSet()
 	else
 	{
 		PC += 2;
-		m_cycleCount += 3;
+		m_bus->tick();
+		m_bus->tick();
 	}
 }
 
@@ -1034,7 +1043,8 @@ void CPU::_callIfCarrySet()
 	else
 	{
 		PC += 2;
-		m_cycleCount += 3;
+		m_bus->tick();
+		m_bus->tick();
 	}
 }
 
@@ -1042,51 +1052,35 @@ void CPU::_return()
 {
 	uint16_t returnAddress = m_popFromStack();
 	PC = returnAddress;
-	m_cycleCount += 4;
+	m_bus->tick();
 }
 
 void CPU::_returnIfZeroNotSet()
 {
 	if (!m_getZeroFlag())
-	{
 		_return();
-		m_cycleCount++;	//conditional RET takes one more cycle than unconditional RET
-	}
-	else
-		m_cycleCount += 2;
+	m_bus->tick();
 }
 
 void CPU::_returnIfZeroSet()
 {
 	if (m_getZeroFlag())
-	{
 		_return();
-		m_cycleCount++;	//conditional RET takes one more cycle than unconditional RET
-	}
-	else
-		m_cycleCount += 2;
+	m_bus->tick();
 }
 
 void CPU::_returnIfCarryNotSet()
 {
 	if (!m_getCarryFlag())
-	{
 		_return();
-		m_cycleCount++;	//conditional RET takes one more cycle than unconditional RET
-	}
-	else
-		m_cycleCount += 2;
+	m_bus->tick();
 }
 
 void CPU::_returnIfCarrySet()
 {
 	if (m_getCarryFlag())
-	{
 		_return();
-		m_cycleCount++;	//conditional RET takes one more cycle than unconditional RET
-	}
-	else
-		m_cycleCount += 2;
+	m_bus->tick();
 }
 
 void CPU::_returnFromInterrupt()
@@ -1094,8 +1088,7 @@ void CPU::_returnFromInterrupt()
 	m_interruptManager->enableInterrupts();
 	uint16_t returnAddress = m_popFromStack();
 	PC = returnAddress;
-
-	m_cycleCount += 4;
+	m_bus->tick();
 }
 
 void CPU::_setCarryFlag()
@@ -1103,7 +1096,6 @@ void CPU::_setCarryFlag()
 	m_setCarryFlag(true);
 	m_setSubtractFlag(false);
 	m_setHalfCarryFlag(false);
-	m_cycleCount += 1;
 }
 
 void CPU::_flipCarryFlag()
@@ -1111,7 +1103,6 @@ void CPU::_flipCarryFlag()
 	m_setCarryFlag(!m_getCarryFlag());
 	m_setSubtractFlag(false);
 	m_setHalfCarryFlag(false);
-	m_cycleCount += 1;
 }
 
 
@@ -1125,12 +1116,12 @@ void CPU::_addRegisters(uint8_t& regA, uint8_t& regB)
 	regA += regB;
 	m_setZeroFlag(regA == 0);
 
-	m_cycleCount += 1;
 }
 
 void CPU::_addPairAddress(uint8_t& regA, Register& regB)
 {
 	uint8_t val = m_bus->read(regB.reg);
+	m_bus->tick();
 
 	m_setHalfCarryFlag(((regA & 0x0F) + (val & 0x0F)) > 0x0F);
 	m_setCarryFlag(((int)regA + (int)val) > 0xFF);
@@ -1139,7 +1130,6 @@ void CPU::_addPairAddress(uint8_t& regA, Register& regB)
 	regA += val;
 	m_setZeroFlag(regA == 0);
 
-	m_cycleCount += 2;
 }
 
 void CPU::_addRegistersCarry(uint8_t& regA, uint8_t& regB)
@@ -1151,12 +1141,13 @@ void CPU::_addRegistersCarry(uint8_t& regA, uint8_t& regB)
 
 	regA += regB + lastCarryFlag;
 	m_setZeroFlag(regA == 0);
-	m_cycleCount += 1;
 }
 
 void CPU::_addPairAddressCarry(uint8_t& regA, Register& regB)
 {
 	uint8_t val = m_bus->read(regB.reg);
+	m_bus->tick();
+
 	uint8_t lastCarryFlag = m_getCarryFlag();
 	m_setHalfCarryFlag(((regA & 0x0F) + (val & 0x0F) + (lastCarryFlag & 0x0F)) > 0x0F);
 	m_setCarryFlag(((int)regA + (int)val + (int)lastCarryFlag) > 0xFF);
@@ -1164,7 +1155,6 @@ void CPU::_addPairAddressCarry(uint8_t& regA, Register& regB)
 
 	regA += val + lastCarryFlag;
 	m_setZeroFlag(regA == 0);
-	m_cycleCount += 2;
 }
 
 void CPU::_addValue(uint8_t& reg)
@@ -1178,7 +1168,6 @@ void CPU::_addValue(uint8_t& reg)
 	reg += val;
 	m_setZeroFlag(reg == 0);
 	
-	m_cycleCount += 2;
 }
 
 void CPU::_addValueCarry(uint8_t& reg)
@@ -1193,7 +1182,6 @@ void CPU::_addValueCarry(uint8_t& reg)
 	reg += val + lastCarryFlag;
 	m_setZeroFlag(reg == 0);
 
-	m_cycleCount += 2;
 }
 
 void CPU::_subRegister(uint8_t& reg)
@@ -1205,7 +1193,6 @@ void CPU::_subRegister(uint8_t& reg)
 	AF.high -= reg;
 	m_setZeroFlag(AF.high == 0);
 
-	m_cycleCount += 1;
 }
 
 void CPU::_subRegisterCarry(uint8_t& reg)
@@ -1218,12 +1205,13 @@ void CPU::_subRegisterCarry(uint8_t& reg)
 	AF.high -= (reg + lastCarryFlag);
 	m_setZeroFlag(AF.high == 0);
 
-	m_cycleCount += 1;
 }
 
 void CPU::_subPairAddress(Register& reg)
 {
 	uint8_t val = m_bus->read(reg.reg);
+	m_bus->tick();
+
 	m_setCarryFlag(AF.high < val);
 	m_setHalfCarryFlag(((AF.high & 0xf) - (val & 0xf)) & 0x10);
 	m_setSubtractFlag(true);
@@ -1231,12 +1219,13 @@ void CPU::_subPairAddress(Register& reg)
 	AF.high -= val;
 	m_setZeroFlag(AF.high == 0);
 
-	m_cycleCount += 2;
 }
 
 void CPU::_subPairAddressCarry(Register& reg)
 {
 	uint8_t val = m_bus->read(reg.reg);
+	m_bus->tick();
+
 	uint8_t lastCarryFlag = m_getCarryFlag();
 	m_setCarryFlag(AF.high < (val+lastCarryFlag));
 	m_setHalfCarryFlag(((AF.high & 0xf) - (val & 0xf) - (lastCarryFlag & 0xf)) & 0x10);
@@ -1245,7 +1234,6 @@ void CPU::_subPairAddressCarry(Register& reg)
 	AF.high -= (val + lastCarryFlag);
 	m_setZeroFlag(!AF.high);
 
-	m_cycleCount += 2;
 }
 
 void CPU::_subValue()
@@ -1258,7 +1246,6 @@ void CPU::_subValue()
 	AF.high -= val;
 	m_setZeroFlag(AF.high == 0);
 
-	m_cycleCount += 2;
 }
 
 void CPU::_subValueCarry()
@@ -1272,7 +1259,6 @@ void CPU::_subValueCarry()
 	AF.high -= (val + lastCarryFlag);
 	m_setZeroFlag(AF.high == 0);
 
-	m_cycleCount += 2;
 }
 
 void CPU::_andRegister(uint8_t& reg)
@@ -1282,18 +1268,18 @@ void CPU::_andRegister(uint8_t& reg)
 	m_setSubtractFlag(false);
 	m_setHalfCarryFlag(true);
 	m_setCarryFlag(false);
-	m_cycleCount += 1;
 }
 
 void CPU::_andPairAddress(Register& reg)
 {
 	uint8_t val = m_bus->read(reg.reg);
+	m_bus->tick();
+
 	AF.high &= val;
 	m_setZeroFlag(!AF.high);
 	m_setSubtractFlag(false);
 	m_setHalfCarryFlag(true);
 	m_setCarryFlag(false);
-	m_cycleCount += 2;
 }
 
 void CPU::_andValue()
@@ -1304,7 +1290,6 @@ void CPU::_andValue()
 	m_setSubtractFlag(false);
 	m_setHalfCarryFlag(true);
 	m_setCarryFlag(false);
-	m_cycleCount += 2;
 }
 
 void CPU::_xorRegister(uint8_t& reg)
@@ -1314,18 +1299,18 @@ void CPU::_xorRegister(uint8_t& reg)
 	m_setSubtractFlag(false);
 	m_setHalfCarryFlag(false);
 	m_setCarryFlag(false);
-	m_cycleCount += 1;
 }
 
 void CPU::_xorPairAddress(Register& reg)
 {
 	uint8_t val = m_bus->read(reg.reg);
+	m_bus->tick();
+
 	AF.high ^= val;
 	m_setZeroFlag(!AF.high);
 	m_setSubtractFlag(false);
 	m_setHalfCarryFlag(false);
 	m_setCarryFlag(false);
-	m_cycleCount += 2;
 }
 
 void CPU::_xorValue()
@@ -1336,7 +1321,6 @@ void CPU::_xorValue()
 	m_setSubtractFlag(false);
 	m_setHalfCarryFlag(false);
 	m_setCarryFlag(false);
-	m_cycleCount += 2;
 }
 
 void CPU::_orRegister(uint8_t& reg)
@@ -1346,18 +1330,18 @@ void CPU::_orRegister(uint8_t& reg)
 	m_setSubtractFlag(false);
 	m_setHalfCarryFlag(false);
 	m_setCarryFlag(false);
-	m_cycleCount += 1;
 }
 
 void CPU::_orPairAddress(Register& reg)
 {
 	uint8_t val = m_bus->read(reg.reg);
+	m_bus->tick();
+
 	AF.high |= val;
 	m_setZeroFlag(!AF.high);
 	m_setSubtractFlag(false);
 	m_setHalfCarryFlag(false);
 	m_setCarryFlag(false);
-	m_cycleCount += 2;
 }
 
 void CPU::_orValue()
@@ -1368,7 +1352,6 @@ void CPU::_orValue()
 	m_setSubtractFlag(false);
 	m_setHalfCarryFlag(false);
 	m_setCarryFlag(false);
-	m_cycleCount += 2;
 }
 
 void CPU::_compareRegister(uint8_t& reg)
@@ -1377,17 +1360,17 @@ void CPU::_compareRegister(uint8_t& reg)
 	m_setCarryFlag(AF.high < reg);
 	m_setZeroFlag(AF.high - reg == 0);
 	m_setSubtractFlag(true);
-	m_cycleCount += 1;
 }
 
 void CPU::_comparePairAddress(Register& reg)
 {
 	uint8_t val = m_bus->read(reg.reg);
+	m_bus->tick();
+
 	m_setHalfCarryFlag((AF.high & 0xF) - (val & 0xF) & 0x10);
 	m_setCarryFlag(AF.high < val);
 	m_setZeroFlag(AF.high - val == 0);
 	m_setSubtractFlag(true);
-	m_cycleCount += 2;
 }
 
 void CPU::_compareValue()
@@ -1397,33 +1380,29 @@ void CPU::_compareValue()
 	m_setCarryFlag(AF.high < val);
 	m_setZeroFlag(AF.high - val == 0);
 	m_setSubtractFlag(true);
-	m_cycleCount += 2;
 }
 
 void CPU::_pushPairRegister(Register& reg)
 {
+	m_bus->tick();	//internal
 	m_pushToStack(reg.reg);
-	m_cycleCount += 4;
 }
 
 void CPU::_popToPairRegister(Register& reg)
 {
 	uint16_t val = m_popFromStack();
 	reg.reg = val;
-	m_cycleCount += 3;
 }
 
 //some misc instructions
 void CPU::_disableInterrupts()
 {
 	m_interruptManager->disableInterrupts();
-	m_cycleCount += 1;
 }
 
 void CPU::_enableInterrupts()
 {
 	m_interruptManager->enableInterrupts();
-	m_cycleCount += 1;
 }
 
 void CPU::_stop()
@@ -1443,21 +1422,19 @@ void CPU::_stop()
 		*/
 
 	Logger::getInstance()->msg(LoggerSeverity::Error, "Invalid instruction STOP hit");
-	m_cycleCount += 1;
 }
 
 void CPU::_halt()
 {
 	m_halted = true;
-	m_cycleCount += 1;
 }
 
 void CPU::_resetToVector(uint8_t vectorIdx)
 {
+	m_bus->tick();	//internal cycle
 	uint16_t resetAddr = vectorIdx * 8;
 	m_pushToStack(PC);
 	PC = resetAddr;
-	m_cycleCount += 4;
 }
 
 void CPU::_adjustBCD()
@@ -1479,7 +1456,6 @@ void CPU::_adjustBCD()
 	m_setHalfCarryFlag(false);
 	m_setZeroFlag(!AF.high);
 
-	m_cycleCount += 1;
 }
 
 void CPU::_loadHLStackIdx()
@@ -1497,8 +1473,7 @@ void CPU::_loadHLStackIdx()
 	m_setCarryFlag(((SP.reg ^ offs ^ (SP_temp & 0xFFFF)) & 0x100) == 0x100);
 
 	HL.reg = SP_temp;
-
-	m_cycleCount += 3;
+	m_bus->tick();	//internal tick
 }
 
 void CPU::_complement()
@@ -1506,7 +1481,6 @@ void CPU::_complement()
 	m_setSubtractFlag(true);
 	m_setHalfCarryFlag(true);
 	AF.high = ~AF.high;
-	m_cycleCount += 1;
 }
 
 void CPU::_RLA()
@@ -1519,7 +1493,6 @@ void CPU::_RLA()
 	m_setSubtractFlag(false);
 	m_setZeroFlag(false);
 	m_setHalfCarryFlag(false);
-	m_cycleCount += 1;
 }
 
 void CPU::_RLCA()
@@ -1531,7 +1504,6 @@ void CPU::_RLCA()
 	m_setZeroFlag(false);
 	m_setHalfCarryFlag(false);
 	AF.high |= msb;
-	m_cycleCount += 1;
 }
 
 void CPU::_RRA()
@@ -1544,7 +1516,6 @@ void CPU::_RRA()
 	m_setSubtractFlag(false);
 	m_setZeroFlag(false);
 	m_setHalfCarryFlag(false);
-	m_cycleCount += 1;
 }
 
 void CPU::_RRCA()
@@ -1556,7 +1527,6 @@ void CPU::_RRCA()
 	m_setZeroFlag(false);
 	m_setHalfCarryFlag(false);
 	AF.high |= (lsb << 7);
-	m_cycleCount += 1;
 }
 
 void CPU::_RL(uint8_t& reg)
@@ -1569,7 +1539,6 @@ void CPU::_RL(uint8_t& reg)
 	m_setCarryFlag(msb);
 	m_setSubtractFlag(false);
 	m_setHalfCarryFlag(false);
-	m_cycleCount += 2;
 }
 
 void CPU::_RLC(uint8_t& reg)
@@ -1581,12 +1550,12 @@ void CPU::_RLC(uint8_t& reg)
 	m_setZeroFlag(!reg);
 	m_setSubtractFlag(false);
 	m_setHalfCarryFlag(false);
-	m_cycleCount += 2;
 }
 
 void CPU::_RL(Register& reg)
 {
 	uint8_t val = m_bus->read(reg.reg);
+	m_bus->tick();
 	
 	uint8_t msb = (val & 0b10000000) >> 7;
 	uint8_t lastCarry = (m_getCarryFlag()) ? 0b00000001 : 0b0;
@@ -1598,12 +1567,13 @@ void CPU::_RL(Register& reg)
 	m_setHalfCarryFlag(false);
 
 	m_bus->write(reg.reg, val);
-	m_cycleCount += 4;
+	m_bus->tick();
 }
 
 void CPU::_RLC(Register& reg)
 {
 	uint8_t val = m_bus->read(reg.reg);
+	m_bus->tick();
 
 	uint8_t msb = (val & 0b10000000) >> 7;
 	val <<= 1;
@@ -1614,7 +1584,7 @@ void CPU::_RLC(Register& reg)
 	m_setHalfCarryFlag(false);
 
 	m_bus->write(reg.reg, val);
-	m_cycleCount += 4;
+	m_bus->tick();
 }
 
 void CPU::_RR(uint8_t& reg)
@@ -1627,7 +1597,6 @@ void CPU::_RR(uint8_t& reg)
 	m_setCarryFlag(lsb);
 	m_setSubtractFlag(false);
 	m_setHalfCarryFlag(false);
-	m_cycleCount += 2;
 }
 
 void CPU::_RRC(uint8_t& reg)
@@ -1639,12 +1608,13 @@ void CPU::_RRC(uint8_t& reg)
 	m_setZeroFlag(!reg);
 	m_setSubtractFlag(false);
 	m_setHalfCarryFlag(false);
-	m_cycleCount += 2;
 }
 
 void CPU::_RR(Register& reg)
 {
 	uint8_t val = m_bus->read(reg.reg);
+	m_bus->tick();
+
 	uint8_t lsb = (val & 0b00000001);
 	val >>= 1;
 	uint8_t m_lastCarry = (m_getCarryFlag()) ? 0b10000000 : 0b0;
@@ -1655,12 +1625,13 @@ void CPU::_RR(Register& reg)
 	m_setHalfCarryFlag(false);
 
 	m_bus->write(reg.reg, val);
-	m_cycleCount += 4;
+	m_bus->tick();
 }
 
 void CPU::_RRC(Register& reg)
 {
 	uint8_t val = m_bus->read(reg.reg);
+	m_bus->tick();
 
 	uint8_t lsb = (val & 0b00000001);
 	val >>= 1;
@@ -1671,7 +1642,7 @@ void CPU::_RRC(Register& reg)
 	m_setHalfCarryFlag(false);
 
 	m_bus->write(reg.reg, val);
-	m_cycleCount += 4;
+	m_bus->tick();
 }
 
 void CPU::_SLA(uint8_t& reg)
@@ -1682,12 +1653,13 @@ void CPU::_SLA(uint8_t& reg)
 	m_setCarryFlag(msb);
 	m_setSubtractFlag(false);
 	m_setHalfCarryFlag(false);
-	m_cycleCount += 2;
 }
 
 void CPU::_SLA(Register& reg)
 {
 	uint8_t val = m_bus->read(reg.reg);
+	m_bus->tick();
+
 	uint8_t msb = (val & 0b10000000) >> 7;
 	val <<= 1;
 	m_setZeroFlag(!val);
@@ -1696,7 +1668,7 @@ void CPU::_SLA(Register& reg)
 	m_setHalfCarryFlag(false);
 
 	m_bus->write(reg.reg, val);
-	m_cycleCount += 4;
+	m_bus->tick();
 }
 
 void CPU::_SRA(uint8_t& reg)
@@ -1709,12 +1681,12 @@ void CPU::_SRA(uint8_t& reg)
 	m_setCarryFlag(lsb);
 	m_setSubtractFlag(false);
 	m_setHalfCarryFlag(false);
-	m_cycleCount += 2;
 }
 
 void CPU::_SRA(Register& reg)
 {
 	uint8_t val = m_bus->read(reg.reg);
+	m_bus->tick();
 	uint8_t lsb = (val & 0b00000001);
 	uint8_t msb = (val & 0b10000000);
 	val >>= 1;
@@ -1725,7 +1697,7 @@ void CPU::_SRA(Register& reg)
 	m_setHalfCarryFlag(false);
 
 	m_bus->write(reg.reg, val);
-	m_cycleCount += 4;
+	m_bus->tick();
 }
 
 void CPU::_SRL(uint8_t& reg)
@@ -1736,12 +1708,13 @@ void CPU::_SRL(uint8_t& reg)
 	m_setCarryFlag(lsb);
 	m_setSubtractFlag(false);
 	m_setHalfCarryFlag(false);
-	m_cycleCount += 2;
 }
 
 void CPU::_SRL(Register& reg)
 {
 	uint8_t val = m_bus->read(reg.reg);
+	m_bus->tick();
+
 	uint8_t lsb = (val & 0b00000001);
 	val >>= 1;
 	m_setZeroFlag(!val);
@@ -1750,7 +1723,7 @@ void CPU::_SRL(Register& reg)
 	m_setHalfCarryFlag(false);
 
 	m_bus->write(reg.reg, val);
-	m_cycleCount += 4;
+	m_bus->tick();
 }
 
 void CPU::_SWAP(uint8_t& reg)
@@ -1764,12 +1737,13 @@ void CPU::_SWAP(uint8_t& reg)
 	m_setSubtractFlag(false);
 	m_setHalfCarryFlag(false);
 	m_setCarryFlag(false);
-	m_cycleCount += 2;
 }
 
 void CPU::_SWAP(Register& reg)
 {
 	uint8_t val = m_bus->read(reg.reg);
+	m_bus->tick();
+
 	uint8_t low = (val & 0x0F) << 4;
 	uint8_t high = (val & 0xF0) >> 4;
 
@@ -1781,7 +1755,7 @@ void CPU::_SWAP(Register& reg)
 	m_setCarryFlag(false);
 
 	m_bus->write(reg.reg, val);
-	m_cycleCount += 4;
+	m_bus->tick();
 }
 
 void CPU::_BIT(int idx, uint8_t& reg)
@@ -1790,17 +1764,16 @@ void CPU::_BIT(int idx, uint8_t& reg)
 	m_setZeroFlag(!bitVal);
 	m_setSubtractFlag(false);
 	m_setHalfCarryFlag(true);
-	m_cycleCount += 2;
 }
 
 void CPU::_BIT(int idx, Register& reg)
 {
 	uint8_t val = m_bus->read(reg.reg);
+	m_bus->tick();
 	uint8_t bitVal = (val >> idx) & 0b00000001;
 	m_setZeroFlag(!bitVal);
 	m_setSubtractFlag(false);
 	m_setHalfCarryFlag(true);
-	m_cycleCount += 3;
 }
 
 void CPU::_RES(int idx, uint8_t& reg)
@@ -1809,32 +1782,32 @@ void CPU::_RES(int idx, uint8_t& reg)
 	mask ^= 0b11111111;	//invert all bits
 	reg &= mask;
 
-	m_cycleCount += 2;
 }
 
 void CPU::_RES(int idx, Register& reg)
 {
 	uint8_t val = m_bus->read(reg.reg);
+	m_bus->tick();
 	uint8_t mask = 0b00000001 << idx;
 	mask ^= 0b11111111;	//invert all bits
 	val &= mask;
 
 	m_bus->write(reg.reg, val);
-	m_cycleCount += 4;
+	m_bus->tick();
 }
 
 void CPU::_SET(int idx, uint8_t& reg)
 {
 	uint8_t mask = 0b00000001 << idx;
 	reg |= mask;
-	m_cycleCount += 2;
 }
 
 void CPU::_SET(int idx, Register& reg)
 {
 	uint8_t val = m_bus->read(reg.reg);
+	m_bus->tick();
 	uint8_t mask = 0b00000001 << idx;
 	val |= mask;
 	m_bus->write(reg.reg, val);
-	m_cycleCount += 4;
+	m_bus->tick();
 }
