@@ -15,6 +15,7 @@ CPU::~CPU()
 void CPU::step()
 {
 	m_lastPC = PC;
+
 	if (!m_halted)
 		m_executeInstruction();
 	else

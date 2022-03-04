@@ -146,9 +146,11 @@
     <ClCompile Include="Cartridge.cpp" />
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="CPU.cpp" />
+    <ClCompile Include="Gameboy.cpp" />
     <ClCompile Include="InterruptManager.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="PPU.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cartridge.h" />
@@ -156,8 +158,10 @@
     <ClInclude Include="Config.h" />
     <ClInclude Include="CPU.h" />
     <ClInclude Include="dmgRegisters.h" />
+    <ClInclude Include="Gameboy.h" />
     <ClInclude Include="InterruptManager.h" />
     <ClInclude Include="Logger.h" />
+    <ClInclude Include="PPU.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

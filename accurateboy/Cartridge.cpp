@@ -6,6 +6,11 @@ Cartridge::Cartridge(std::vector<uint8_t> ROM)
 	std::copy(ROM.begin(), ROM.begin() + 32768, m_ROM.begin());
 }
 
+Cartridge::~Cartridge()
+{
+
+}
+
 uint8_t Cartridge::read(uint16_t address)
 {
 	if (address <= 0x7FFF)

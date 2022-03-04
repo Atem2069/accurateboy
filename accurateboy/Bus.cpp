@@ -1,8 +1,10 @@
 #include"Bus.h"
 
-Bus::Bus(std::shared_ptr<InterruptManager>& interruptManager)
+Bus::Bus(std::vector<uint8_t> romData, std::shared_ptr<InterruptManager>& interruptManager, std::shared_ptr<PPU>& ppu)
 {
+	m_cartridge = std::make_shared<Cartridge>(romData);
 	m_interruptManager = interruptManager;
+	m_ppu = ppu;
 	m_inBootRom = true;
 }
 
@@ -17,14 +19,12 @@ uint8_t Bus::read(uint16_t address)
 		return m_bootRom[address];
 
 	if ((address <= 0x7FFF) || (address >= 0xA000 && address <= 0xBFFF))
-	{
-		//cartridge handles it
-	}
+		return m_cartridge->read(address);
 	if ((address >= 0x8000 && address <= 0x9FFF) || (address >= 0xFE00 && address <= 0xFE9F))
 	{
-		//ppu handles read
+		return m_ppu->read(address);
 	}
-	if (address <= 0xC000 && address <= 0xFDFF)
+	if (address >= 0xC000 && address <= 0xFDFF)
 	{
 		if (address > 0xDFFF)
 			address -= 0xE000;
@@ -36,18 +36,15 @@ uint8_t Bus::read(uint16_t address)
 	if (address >= 0xFF80 && address <= 0xFFFE)
 	{
 		return m_HRAM[address - 0xFF80];
-	}
-	if (address == 0xFFFF)
-	{
-		//interrupt handler manages it
-	}
+	}	
 
 	if (address >= 0xFF00 && address <= 0xFF7F)
 	{
 		switch (address)
 		{
+
 		case REG_LCDC: case REG_STAT: case REG_SCY: case REG_SCX: case REG_WY: case REG_WX: case REG_LY: case REG_LYC:
-			return 0xFF; break;	//todo: ppu
+			return m_ppu->read(address); break;
 		case REG_IE: case REG_IFLAGS:
 			return m_interruptManager->read(address); break;
 		}
@@ -60,14 +57,12 @@ uint8_t Bus::read(uint16_t address)
 void Bus::write(uint16_t address, uint8_t value)
 {
 	if ((address <= 0x7FFF) || (address >= 0xA000 && address <= 0xBFFF))
-	{
-		//cartridge handles it
-	}
+		m_cartridge->write(address, value);
 	if ((address >= 0x8000 && address <= 0x9FFF) || (address >= 0xFE00 && address <= 0xFE9F))
 	{
-		//ppu handles read
+		m_ppu->write(address, value);
 	}
-	if (address <= 0xC000 && address <= 0xFDFF)
+	if (address >= 0xC000 && address <= 0xFDFF)
 	{
 		if (address > 0xDFFF)
 			address -= 0xE000;
@@ -80,21 +75,23 @@ void Bus::write(uint16_t address, uint8_t value)
 	{
 		m_HRAM[address - 0xFF80] = value;
 	}
-	if (address == 0xFFFF)
-	{
-		//interrupt handler manages it
-	}
 
 	if (address >= 0xFF00 && address <= 0xFF7F)
 	{
 		switch (address)
 		{
 		case REG_LCDC: case REG_STAT: case REG_SCY: case REG_SCX: case REG_WY: case REG_WX: case REG_LY: case REG_LYC:
-			(void)0; break;	//todo: ppu
+			m_ppu->write(address, value); break;
 		case REG_IE: case REG_IFLAGS:
 			m_interruptManager->write(address, value); break;
+		case 0xFF01:
+			std::cout << value; break;
 		case 0xFF50:		//boot rom lockout
-			m_inBootRom = false; break;
+		{
+			Logger::getInstance()->msg(LoggerSeverity::Info, "Unmapping boot ROM. .");
+			m_inBootRom = false;
+			break;
+		}
 		}
 	}
 
@@ -104,4 +101,5 @@ void Bus::write(uint16_t address, uint8_t value)
 void Bus::tick()
 {
 	//ticks all components
+	m_ppu->step();
 }

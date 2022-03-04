@@ -1,13 +1,19 @@
+#pragma once
+
 #include"Logger.h"
 #include"dmgRegisters.h"
 #include"InterruptManager.h"
+#include"Cartridge.h"
+#include"PPU.h"
 
 #include<iostream>
+#include<vector>
 #include<array>
+
 class Bus
 {
 public:
-	Bus(std::shared_ptr<InterruptManager>& interruptManager);
+	Bus(std::vector<uint8_t> romData, std::shared_ptr<InterruptManager>& interruptManager, std::shared_ptr<PPU>& ppu);
 	~Bus();
 
 	uint8_t read(uint16_t address);
@@ -20,5 +26,7 @@ private:
 	std::array<uint8_t, 8192> m_WRAM;
 	std::array<uint8_t, 128> m_HRAM;
 
+	std::shared_ptr<Cartridge> m_cartridge;
 	std::shared_ptr<InterruptManager> m_interruptManager;
+	std::shared_ptr<PPU> m_ppu;
 };
