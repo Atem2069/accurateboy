@@ -1,10 +1,11 @@
 #include"Bus.h"
 
-Bus::Bus(std::vector<uint8_t> romData, std::shared_ptr<InterruptManager>& interruptManager, std::shared_ptr<PPU>& ppu)
+Bus::Bus(std::vector<uint8_t> romData, std::shared_ptr<InterruptManager>& interruptManager, std::shared_ptr<PPU>& ppu, std::shared_ptr<APU>& apu)
 {
 	m_cartridge = std::make_shared<Cartridge>(romData);
 	m_interruptManager = interruptManager;
 	m_ppu = ppu;
+	m_apu = apu;
 	m_inBootRom = true;
 }
 
@@ -36,10 +37,13 @@ uint8_t Bus::read(uint16_t address)
 	if (address >= 0xFF80 && address <= 0xFFFE)
 	{
 		return m_HRAM[address - 0xFF80];
-	}	
+	}
 
 	if (address >= 0xFF00 && address <= 0xFF7F)
 	{
+		//special case: apu
+		if (address >= 0xFF10 && address <= 0xFF3F)
+			return m_apu->readIORegister(address);
 		switch (address)
 		{
 
@@ -78,6 +82,8 @@ void Bus::write(uint16_t address, uint8_t value)
 
 	if (address >= 0xFF00 && address <= 0xFF7F)
 	{
+		if (address >= 0xFF10 && address <= 0xFF3F)
+			m_apu->writeIORegister(address, value);
 		switch (address)
 		{
 		case REG_LCDC: case REG_STAT: case REG_SCY: case REG_SCX: case REG_WY: case REG_WX: case REG_LY: case REG_LYC:
@@ -102,4 +108,5 @@ void Bus::tick()
 {
 	//ticks all components
 	m_ppu->step();
+	m_apu->step();
 }

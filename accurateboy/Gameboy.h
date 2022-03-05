@@ -4,6 +4,7 @@
 #include"CPU.h"
 #include"PPU.h"
 #include"Display.h"
+#include"APU.h"
 
 #include<thread>
 
@@ -22,6 +23,7 @@ private:
 	std::shared_ptr<InterruptManager> m_interruptManager;
 	std::shared_ptr<Bus> m_bus;
 	std::shared_ptr<PPU> m_ppu;
+	std::shared_ptr<APU> m_apu;
 	std::shared_ptr<Display> m_display;
 
 	void m_displayWorker();

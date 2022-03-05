@@ -5,6 +5,7 @@
 #include"InterruptManager.h"
 #include"Cartridge.h"
 #include"PPU.h"
+#include"APU.h"
 
 #include<iostream>
 #include<vector>
@@ -13,7 +14,7 @@
 class Bus
 {
 public:
-	Bus(std::vector<uint8_t> romData, std::shared_ptr<InterruptManager>& interruptManager, std::shared_ptr<PPU>& ppu);
+	Bus(std::vector<uint8_t> romData, std::shared_ptr<InterruptManager>& interruptManager, std::shared_ptr<PPU>& ppu, std::shared_ptr<APU>& apu);
 	~Bus();
 
 	uint8_t read(uint16_t address);
@@ -29,4 +30,5 @@ private:
 	std::shared_ptr<Cartridge> m_cartridge;
 	std::shared_ptr<InterruptManager> m_interruptManager;
 	std::shared_ptr<PPU> m_ppu;
+	std::shared_ptr<APU> m_apu;
 };
