@@ -100,8 +100,8 @@ void InterruptManager::write(uint16_t address, uint8_t value)
 	switch (address)
 	{
 	case REG_IE:
-		IE = value;
+		IE = value; break;
 	case REG_IFLAGS:
-		IFLAGS = value;
+		IFLAGS = value; break;
 	}
 }

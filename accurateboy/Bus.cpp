@@ -78,9 +78,10 @@ void Bus::write(uint16_t address, uint8_t value)
 	if (address >= 0xFF80 && address <= 0xFFFE)
 	{
 		m_HRAM[address - 0xFF80] = value;
+		return;
 	}
 
-	if (address >= 0xFF00 && address <= 0xFF7F)
+	if ((address >= 0xFF00 && address <= 0xFF7F) || address==0xFFFF)
 	{
 		if (address >= 0xFF10 && address <= 0xFF3F)
 			m_apu->writeIORegister(address, value);
