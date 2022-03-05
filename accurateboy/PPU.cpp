@@ -12,7 +12,93 @@ PPU::~PPU()
 
 void PPU::step()
 {
-	//todo
+	for (int i = 0; i < 4; i++)
+		m_tickTCycle();
+}
+
+void PPU::m_tickTCycle()
+{
+	if (!m_getLCDEnabled())
+		return;
+	uint8_t curPPUMode = STAT & 0b11;
+
+	//todo here: STAT interrupts
+
+	switch (curPPUMode)
+	{
+	case 0:
+		m_hblank(); break;
+	case 1:
+		m_vblank(); break;
+	case 2:
+		m_OAMSearch(); break;
+	case 3:
+		m_LCDTransfer(); break;
+	}
+}
+
+void PPU::m_hblank()	//mode 0
+{
+	m_modeCycleDiff++;
+	m_totalLineCycles++;
+	if (m_totalLineCycles == 456)	//enter line takes 456 t cycles
+	{
+		m_modeCycleDiff = 0;
+		m_totalLineCycles = 0;
+		LY++;
+		if (LY == 144)
+		{
+			STAT &= 0b11111100;
+			STAT |= 0b00000001;	//enter vblank
+			m_interruptManager->requestInterrupt(InterruptType::VBlank);
+		}
+		else
+		{
+			STAT &= 0b11111100;
+			STAT |= 0b00000011;	//enter mode 2 again
+		}
+	}
+}
+
+void PPU::m_vblank()	//mode 1
+{
+	m_modeCycleDiff++;
+	if (m_modeCycleDiff == 456)
+	{
+		m_modeCycleDiff = 0;
+		LY++;
+		if (LY == 154)
+		{
+			LY = 0;				//go back to beginning
+			STAT &= 0b11111100;
+			STAT |= 0b00000011;	//enter mode 2
+		}
+	}
+}
+
+void PPU::m_OAMSearch()	//mode 2
+{
+	m_modeCycleDiff++;
+	m_totalLineCycles++;
+	if (m_modeCycleDiff == 80)
+	{
+		m_modeCycleDiff = 0;
+		STAT &= 0b11111100;
+		STAT |= 0b00000011;	//enter mode 3
+	}
+}
+
+void PPU::m_LCDTransfer()	//mode 3
+{
+	m_modeCycleDiff++;
+	m_totalLineCycles++;
+
+	//we're not actually rendering yet, but mode 3 has variable cycle timing. rn we'll just say 172 (but will be fixed when doing actual fifo)
+	if (m_modeCycleDiff == 172)
+	{
+		m_modeCycleDiff = 0;
+		STAT &= 0b11111100;	//enter mode 0
+	}
 }
 
 uint8_t PPU::read(uint16_t address)
