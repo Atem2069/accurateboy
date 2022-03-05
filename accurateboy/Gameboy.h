@@ -3,6 +3,9 @@
 #include"Bus.h"
 #include"CPU.h"
 #include"PPU.h"
+#include"Display.h"
+
+#include<thread>
 
 class GameBoy
 {
@@ -19,4 +22,8 @@ private:
 	std::shared_ptr<InterruptManager> m_interruptManager;
 	std::shared_ptr<Bus> m_bus;
 	std::shared_ptr<PPU> m_ppu;
+	std::shared_ptr<Display> m_display;
+
+	void m_displayWorker();
+	bool m_shouldStop = false;
 };

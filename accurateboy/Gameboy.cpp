@@ -2,7 +2,7 @@
 
 GameBoy::GameBoy()
 {
-	m_initialise();
+	
 }
 
 GameBoy::~GameBoy()
@@ -12,23 +12,46 @@ GameBoy::~GameBoy()
 
 void GameBoy::run()
 {
-	while (true)
+
+	std::thread displayThread(&GameBoy::m_displayWorker, this);
+
+	while (Config::GB.System.RomName.empty())	//periodically sleep until rom name specified
+		Sleep(10);	
+
+	m_initialise();
+
+	while (!m_shouldStop)
 	{
+
+		//if need to reset:
+		if (Config::GB.System.reset)
+		{
+			m_destroy();
+			m_initialise();
+		}
+
 		m_cpu->step();
+
+
 	}
+
+	displayThread.join();
+
+	m_destroy();
 }
 
 void GameBoy::m_initialise()
 {
+	if (Config::GB.System.RomName.empty())
+		return;
+
+	Logger::getInstance()->msg(LoggerSeverity::Info, "Initialise with new ROM - " + Config::GB.System.RomName);
 
 	std::vector<uint8_t> romData;
-	std::ifstream romReadHandle("Tests\\01-special.gb", std::ios::in | std::ios::binary);
+	std::ifstream romReadHandle(Config::GB.System.RomName, std::ios::in | std::ios::binary);
 	if (!romReadHandle)
-	{
-		//Logger::getInstance()->msg(LoggerSeverity::Error, "Invalid file " + name);
-		//return false;
 		return;
-	}
+
 	romReadHandle >> std::noskipws;
 	while (!romReadHandle.eof() && romData.size() <= (8 * 1024 * 1024))
 	{
@@ -41,11 +64,29 @@ void GameBoy::m_initialise()
 	m_ppu = std::make_shared<PPU>(m_interruptManager);
 	m_bus = std::make_shared<Bus>(romData, m_interruptManager, m_ppu);
 	m_cpu = std::make_shared<CPU>(m_bus, m_interruptManager);
+
+	Config::GB.System.reset = false;
 }
 
 void GameBoy::m_destroy()
 {
+	Logger::getInstance()->msg(LoggerSeverity::Info, "Destroying current emulator instance. .");
 	m_cpu.reset();
 	m_bus.reset();
 	m_interruptManager.reset();
+}
+
+void GameBoy::m_displayWorker()
+{
+	Logger::getInstance()->msg(LoggerSeverity::Info, "Create display thread..");
+	m_display = std::make_shared<Display>(160 * 4, 144 * 4);
+	
+	while (!m_display->shouldClose())
+	{
+		//update with new ppu info
+		m_display->draw();
+	}
+	m_shouldStop = true;
+
+	Logger::getInstance()->msg(LoggerSeverity::Info, "Display thread de-init!");
 }

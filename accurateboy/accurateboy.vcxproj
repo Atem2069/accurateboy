@@ -117,7 +117,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>..\lib\SDL2-2.0.20\include;..\lib\glad\include;..\lib\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\lib\imgui;..\lib\SDL2-2.0.20\include;..\lib\glad\include;..\lib\glfw\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -135,7 +135,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>..\lib\SDL2-2.0.20\include;..\lib\glad\include;..\lib\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\lib\imgui;..\lib\SDL2-2.0.20\include;..\lib\glad\include;..\lib\glfw\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -159,7 +159,9 @@
     <ClCompile Include="Cartridge.cpp" />
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="CPU.cpp" />
+    <ClCompile Include="Display.cpp" />
     <ClCompile Include="Gameboy.cpp" />
+    <ClCompile Include="guiRenderer.cpp" />
     <ClCompile Include="InterruptManager.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
@@ -176,13 +178,19 @@
     <ClInclude Include="..\lib\imgui\imstb_truetype.h" />
     <ClInclude Include="Cartridge.h" />
     <ClInclude Include="cgbRegisters.h" />
+    <ClInclude Include="Common\vec2.h" />
+    <ClInclude Include="Common\vec3.h" />
     <ClInclude Include="Config.h" />
     <ClInclude Include="CPU.h" />
+    <ClInclude Include="Display.h" />
     <ClInclude Include="dmgRegisters.h" />
     <ClInclude Include="Gameboy.h" />
+    <ClInclude Include="guiRenderer.h" />
     <ClInclude Include="InterruptManager.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="PPU.h" />
+    <ClInclude Include="Shaders\fragment.h" />
+    <ClInclude Include="Shaders\vertex.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
