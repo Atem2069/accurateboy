@@ -25,4 +25,14 @@ private:
 	//io registers
 	uint8_t LCDC = {}, STAT = {}, SCX = {}, SCY = {}, WY = {}, WX = {}, LY = 0x90, LYC = {}, BGP = {}, OBP0 = {}, OBP1 = {};
 
+	//lcdc bits
+	bool m_getLCDEnabled();
+	bool m_getWindowNametable();
+	bool m_getWindowEnabled();
+	bool m_getTilemap();
+	bool m_getBackgroundNametable();
+	bool m_getSpriteSize();
+	bool m_getSpritesEnabled();
+	bool m_getBackgroundPriority();
+
 };

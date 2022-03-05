@@ -85,3 +85,43 @@ void PPU::write(uint16_t address, uint8_t value)
 		OBP1=value; break;
 	}
 }
+
+bool PPU::m_getLCDEnabled()
+{
+	return (LCDC >> 7) & 0b1;
+}
+
+bool PPU::m_getWindowNametable()
+{
+	return (LCDC >> 6) & 0b1;
+}
+
+bool PPU::m_getWindowEnabled()
+{
+	return (LCDC >> 5) & 0b1;
+}
+
+bool PPU::m_getTilemap()
+{
+	return (LCDC >> 4) & 0b1;
+}
+
+bool PPU::m_getBackgroundNametable()
+{
+	return (LCDC >> 3) & 0b1;
+}
+
+bool PPU::m_getSpriteSize()
+{
+	return (LCDC >> 2) & 0b1;
+}
+
+bool PPU::m_getSpritesEnabled()
+{
+	return (LCDC >> 1) & 0b1;
+}
+
+bool PPU::m_getBackgroundPriority()
+{
+	return LCDC & 0b1;
+}
