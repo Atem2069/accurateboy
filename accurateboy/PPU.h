@@ -2,10 +2,19 @@
 
 #include<iostream>
 #include<array>
+#include<queue>
 
 #include"Logger.h"
 #include"InterruptManager.h"
 #include"dmgRegisters.h"
+
+enum class FetcherStage
+{
+	FetchTileNumber,
+	FetchTileDataLow,
+	FetchTileDataHigh,
+	PushToFIFO
+};
 
 class PPU
 {
@@ -17,6 +26,7 @@ public:
 
 	uint8_t read(uint16_t address);
 	void write(uint16_t address, uint8_t value);
+	uint32_t* getDisplayBuffer();
 private:
 	void m_tickTCycle();
 	void m_hblank();
@@ -43,4 +53,10 @@ private:
 	bool m_getSpritesEnabled();
 	bool m_getBackgroundPriority();
 
+	std::queue<uint8_t> m_backgroundFIFO;
+	std::queue<uint8_t> m_spriteFIFO;
+	FetcherStage m_fetcherStage;
+
+	uint32_t m_scratchBuffer[160 * 144];
+	uint32_t m_backBuffer[160 * 144];
 };

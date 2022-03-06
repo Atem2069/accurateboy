@@ -86,6 +86,8 @@ void GameBoy::m_displayWorker()
 	while (!m_display->shouldClose())
 	{
 		//update with new ppu info
+		if(m_ppu.get())
+			m_display->upload(m_ppu->getDisplayBuffer(), true);
 		m_display->draw();
 	}
 	m_shouldStop = true;

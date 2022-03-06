@@ -3,6 +3,9 @@
 PPU::PPU(std::shared_ptr<InterruptManager>& interruptManager)
 {
 	m_interruptManager = interruptManager;
+	//simple test
+	for (int i = 0; i < (160 * 144); i++)
+		m_backBuffer[i] = i;
 }
 
 PPU::~PPU()
@@ -210,4 +213,9 @@ bool PPU::m_getSpritesEnabled()
 bool PPU::m_getBackgroundPriority()
 {
 	return LCDC & 0b1;
+}
+
+uint32_t* PPU::getDisplayBuffer()
+{
+	return m_backBuffer;
 }
