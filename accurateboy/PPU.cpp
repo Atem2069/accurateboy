@@ -54,6 +54,10 @@ void PPU::m_hblank()	//mode 0
 			STAT &= 0b11111100;
 			STAT |= 0b00000001;	//enter vblank
 			m_interruptManager->requestInterrupt(InterruptType::VBlank);
+
+			//copy over scratch buffer to backbuffer
+			memcpy(m_backBuffer, m_scratchBuffer, 160 * 144 * sizeof(uint32_t));
+
 		}
 		else
 		{
@@ -124,6 +128,30 @@ void PPU::m_LCDTransfer()	//mode 3
 	{
 		FIFOPixel cur = m_backgroundFIFO.front();
 		m_backgroundFIFO.pop();
+
+		if (m_lcdXCoord >= (SCX % 8))	//first (scx % 8) pixels discarded, only after that does rendering happen
+		{
+			
+			uint8_t col = (BGP >> (cur.colorID * 2)) & 0b11;
+			int pixelCoord = (LY * 160) + m_lcdXCoord;
+			uint32_t finalCol = 0;
+			
+			switch (col)	//need to rewrite it, just good for quick testing
+			{
+			case 0b00:
+				finalCol = 0xFFFFFFFF; break;
+			case 0b01:
+				finalCol = 0xBFBFBFFF; break;
+			case 0b10:
+				finalCol = 0x5E5E5EFF; break;
+			case 0b11:
+				finalCol = 0x000000FF; break;
+			}
+
+			m_scratchBuffer[pixelCoord] = finalCol;
+
+		}
+
 		m_lcdXCoord++;
 		if (m_lcdXCoord == 160)	//enter hblank
 		{
@@ -133,16 +161,6 @@ void PPU::m_LCDTransfer()	//mode 3
 			STAT &= 0b11111100;
 		}
 	}
-
-	/*m_modeCycleDiff++;
-	m_totalLineCycles++;
-
-	//we're not actually rendering yet, but mode 3 has variable cycle timing. rn we'll just say 172 (but will be fixed when doing actual fifo)
-	if (m_modeCycleDiff == 172)
-	{
-		m_modeCycleDiff = 0;
-		STAT &= 0b11111100;	//enter mode 0
-	}*/
 }
 //todo:
 void PPU::m_fetchTileNumber()
@@ -175,7 +193,14 @@ void PPU::m_fetchTileDataLow()
 		m_modeCycleDiff = 0;
 		m_fetcherStage = FetcherStage::FetchTileDataHigh;
 
-		//grab low tile number
+		int tileDataOffset = (m_getTilemap()) ? 0x8000 : 0x8800;
+		if (!m_getTilemap())
+			m_tileNumber += 128;
+
+		tileDataOffset = m_tileNumber * 16;	//*16 because each tile is 16 bytes (2 bytes per row)
+		tileDataOffset += 2 * ((LY + SCY) % 8);	//then extract correct row based on ly + scy mod 8
+		
+		m_tileDataLow = m_VRAM[tileDataOffset];
 	}
 }
 
@@ -185,8 +210,15 @@ void PPU::m_fetchTileDataHigh()
 	{
 		m_modeCycleDiff = 0;
 		m_fetcherStage = FetcherStage::PushToFIFO;
+		//same thing really, just + 1!
+		int tileDataOffset = (m_getTilemap()) ? 0x8000 : 0x8800;
+		if (!m_getTilemap())
+			m_tileNumber += 128;
 
-		//grab high tile number
+		tileDataOffset = m_tileNumber * 16;	//*16 because each tile is 16 bytes (2 bytes per row)
+		tileDataOffset += 2 * ((LY + SCY) % 8);	//then extract correct row based on ly + scy mod 8
+
+		m_tileDataHigh = m_VRAM[tileDataOffset+1];
 	}
 }
 

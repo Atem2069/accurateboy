@@ -47,7 +47,7 @@ uint8_t Bus::read(uint16_t address)
 		switch (address)
 		{
 
-		case REG_LCDC: case REG_STAT: case REG_SCY: case REG_SCX: case REG_WY: case REG_WX: case REG_LY: case REG_LYC:
+		case REG_LCDC: case REG_STAT: case REG_SCY: case REG_SCX: case REG_WY: case REG_WX: case REG_LY: case REG_LYC: case 0xFF47: case 0xFF48: case 0xFF49:
 			return m_ppu->read(address); break;
 		case REG_IE: case REG_IFLAGS:
 			return m_interruptManager->read(address); break;
@@ -87,7 +87,7 @@ void Bus::write(uint16_t address, uint8_t value)
 			m_apu->writeIORegister(address, value);
 		switch (address)
 		{
-		case REG_LCDC: case REG_STAT: case REG_SCY: case REG_SCX: case REG_WY: case REG_WX: case REG_LY: case REG_LYC:
+		case REG_LCDC: case REG_STAT: case REG_SCY: case REG_SCX: case REG_WY: case REG_WX: case REG_LY: case REG_LYC: case 0xFF47: case 0xFF48: case 0xFF49:
 			m_ppu->write(address, value); break;
 		case REG_IE: case REG_IFLAGS:
 			m_interruptManager->write(address, value); break;
