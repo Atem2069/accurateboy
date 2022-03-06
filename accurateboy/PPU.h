@@ -16,6 +16,13 @@ enum class FetcherStage
 	PushToFIFO
 };
 
+struct FIFOPixel
+{
+	uint8_t colorID;
+	bool hasPriority;
+	int paletteID;	//not really used yet
+};
+
 class PPU
 {
 public:
@@ -53,9 +60,20 @@ private:
 	bool m_getSpritesEnabled();
 	bool m_getBackgroundPriority();
 
-	std::queue<uint8_t> m_backgroundFIFO;
-	std::queue<uint8_t> m_spriteFIFO;
+	std::queue<FIFOPixel> m_backgroundFIFO;
+	std::queue<FIFOPixel> m_spriteFIFO;
 	FetcherStage m_fetcherStage;
+	int m_fetcherX = 0;
+	int m_lcdXCoord = 0;
+	int m_tileNumber = 0;
+	uint8_t m_tileDataLow = 0;
+	uint8_t m_tileDataHigh = 0;
+	bool m_fetcherBeginDelayed = false;
+
+	void m_fetchTileNumber();
+	void m_fetchTileDataLow();
+	void m_fetchTileDataHigh();
+	void m_pushToFIFO();
 
 	uint32_t m_scratchBuffer[160 * 144];
 	uint32_t m_backBuffer[160 * 144];

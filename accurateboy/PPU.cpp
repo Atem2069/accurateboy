@@ -58,7 +58,7 @@ void PPU::m_hblank()	//mode 0
 		else
 		{
 			STAT &= 0b11111100;
-			STAT |= 0b00000011;	//enter mode 2 again
+			STAT |= 0b00000010;	//enter mode 2 again
 		}
 	}
 }
@@ -74,7 +74,7 @@ void PPU::m_vblank()	//mode 1
 		{
 			LY = 0;				//go back to beginning
 			STAT &= 0b11111100;
-			STAT |= 0b00000011;	//enter mode 2
+			STAT |= 0b00000010;	//enter mode 2
 		}
 	}
 }
@@ -88,6 +88,10 @@ void PPU::m_OAMSearch()	//mode 2
 		m_modeCycleDiff = 0;
 		STAT &= 0b11111100;
 		STAT |= 0b00000011;	//enter mode 3
+		m_fetcherX = 0;									//resetting fifo as we enter mode 3
+		m_lcdXCoord = 0;
+		m_fetcherStage = FetcherStage::FetchTileNumber;
+		m_fetcherBeginDelayed = false;
 	}
 }
 
@@ -95,12 +99,117 @@ void PPU::m_LCDTransfer()	//mode 3
 {
 	m_modeCycleDiff++;
 	m_totalLineCycles++;
+	if (m_lcdXCoord == 0 && !m_fetcherBeginDelayed && m_modeCycleDiff < 6)
+		return;
+	if (m_lcdXCoord == 0 && !m_fetcherBeginDelayed && m_modeCycleDiff==6)
+	{
+		m_modeCycleDiff = 0;
+		m_fetcherBeginDelayed = true;
+	}
+
+	switch (m_fetcherStage)
+	{
+	case FetcherStage::FetchTileNumber:
+		m_fetchTileNumber(); break;
+	case FetcherStage::FetchTileDataHigh:
+		m_fetchTileDataHigh(); break;
+	case FetcherStage::FetchTileDataLow:
+		m_fetchTileDataLow(); break;
+	case FetcherStage::PushToFIFO:
+		m_pushToFIFO(); break;
+	}
+
+	//pop off, push to display
+	if (m_backgroundFIFO.size() > 0)
+	{
+		FIFOPixel cur = m_backgroundFIFO.front();
+		m_backgroundFIFO.pop();
+		m_lcdXCoord++;
+		if (m_lcdXCoord == 160)	//enter hblank
+		{
+			while (m_backgroundFIFO.size() > 0)
+				m_backgroundFIFO.pop();
+			m_modeCycleDiff = 0;
+			STAT &= 0b11111100;
+		}
+	}
+
+	/*m_modeCycleDiff++;
+	m_totalLineCycles++;
 
 	//we're not actually rendering yet, but mode 3 has variable cycle timing. rn we'll just say 172 (but will be fixed when doing actual fifo)
 	if (m_modeCycleDiff == 172)
 	{
 		m_modeCycleDiff = 0;
 		STAT &= 0b11111100;	//enter mode 0
+	}*/
+}
+//todo:
+void PPU::m_fetchTileNumber()
+{
+	if (m_modeCycleDiff == 2)
+	{
+		m_modeCycleDiff = 0;
+		m_fetcherStage = FetcherStage::FetchTileDataLow;
+
+		//assume always fetching bg for now, fix later
+		int xOffset = SCX / 8;
+		int yOffset = 32 * (((LY + SCY) & 0xFF) / 8);
+		int tileMapOffset = (m_fetcherX + xOffset + yOffset) % 1024;
+		m_fetcherX++;
+
+		if (m_getBackgroundNametable())
+			tileMapOffset += 0x1C00;
+		else
+			tileMapOffset += 0x1800;
+
+		m_tileNumber = m_VRAM[tileMapOffset];
+
+	}
+}
+
+void PPU::m_fetchTileDataLow()
+{
+	if (m_modeCycleDiff == 2)
+	{
+		m_modeCycleDiff = 0;
+		m_fetcherStage = FetcherStage::FetchTileDataHigh;
+
+		//grab low tile number
+	}
+}
+
+void PPU::m_fetchTileDataHigh()
+{
+	if (m_modeCycleDiff == 2)
+	{
+		m_modeCycleDiff = 0;
+		m_fetcherStage = FetcherStage::PushToFIFO;
+
+		//grab high tile number
+	}
+}
+
+void PPU::m_pushToFIFO()
+{
+	if (m_backgroundFIFO.size()==0)
+	{
+		m_modeCycleDiff = 0;
+		m_fetcherStage = FetcherStage::FetchTileNumber;
+		for (int i = 0; i < 8; i++)
+		{
+			uint8_t colHigh = (m_tileDataHigh >> (7 - i)) & 0b1;
+			uint8_t colLow = (m_tileDataLow >> (7 - i)) & 0b1;
+			uint8_t colID = (colHigh << 1) | colLow;
+
+			//hardcoded for now, no sprites yet
+			FIFOPixel tempPixel = {};
+			tempPixel.colorID = colID;
+			tempPixel.hasPriority = true;
+			tempPixel.paletteID = 0;
+
+			m_backgroundFIFO.push(tempPixel);
+		}
 	}
 }
 
