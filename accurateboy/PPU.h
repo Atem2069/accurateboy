@@ -50,6 +50,9 @@ private:
 	//io registers
 	uint8_t LCDC = {}, STAT = {}, SCX = {}, SCY = {}, WY = {}, WX = {}, LY = {}, LYC = {}, BGP = {}, OBP0 = {}, OBP1 = {};
 
+	//stat interrupt
+	bool m_lastStatState;
+
 	//lcdc bits
 	bool m_getLCDEnabled();
 	bool m_getWindowNametable();
@@ -69,6 +72,7 @@ private:
 	uint8_t m_tileDataLow = 0;
 	uint8_t m_tileDataHigh = 0;
 	bool m_fetcherBeginDelayed = false;
+	int m_discardCounter = 0;
 
 	void m_fetchTileNumber();
 	void m_fetchTileDataLow();

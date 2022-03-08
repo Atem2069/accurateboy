@@ -2,7 +2,11 @@
 
 Bus::Bus(std::vector<uint8_t> romData, std::shared_ptr<InterruptManager>& interruptManager, std::shared_ptr<PPU>& ppu, std::shared_ptr<APU>& apu)
 {
-	m_cartridge = std::make_shared<Cartridge>(romData);
+	uint8_t cartType = romData[0x0147];
+	if (cartType >= 0x01 && cartType <= 0x03)
+		m_cartridge = std::make_shared<MBC1>(romData);
+	else
+		m_cartridge = std::make_shared<Cartridge>(romData);
 	m_interruptManager = interruptManager;
 	m_ppu = ppu;
 	m_apu = apu;

@@ -166,6 +166,7 @@
     <ClCompile Include="InterruptManager.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MBC1.cpp" />
     <ClCompile Include="PPU.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -190,6 +191,7 @@
     <ClInclude Include="guiRenderer.h" />
     <ClInclude Include="InterruptManager.h" />
     <ClInclude Include="Logger.h" />
+    <ClInclude Include="MBC.h" />
     <ClInclude Include="PPU.h" />
     <ClInclude Include="Shaders\fragment.h" />
     <ClInclude Include="Shaders\vertex.h" />

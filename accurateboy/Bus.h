@@ -3,7 +3,7 @@
 #include"Logger.h"
 #include"dmgRegisters.h"
 #include"InterruptManager.h"
-#include"Cartridge.h"
+#include"MBC.h"
 #include"PPU.h"
 #include"APU.h"
 
