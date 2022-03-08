@@ -44,7 +44,7 @@ uint8_t Bus::read(uint16_t address)
 		return m_HRAM[address - 0xFF80];
 	}
 
-	if (address >= 0xFF00 && address <= 0xFF7F)
+	if ((address >= 0xFF00 && address <= 0xFF7F) || address == 0xFFFF)
 	{
 		//special case: apu
 		if (address >= 0xFF10 && address <= 0xFF3F)
@@ -60,7 +60,6 @@ uint8_t Bus::read(uint16_t address)
 			return m_timer->read(address); break;
 		}
 	}
-
 
 	return 0xFF;
 }

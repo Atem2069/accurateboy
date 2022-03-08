@@ -14,25 +14,28 @@ CPU::~CPU()
 
 void CPU::step()
 {
-	m_lastPC = PC;
-	if (!m_halted)
-		m_executeInstruction();
-	else
-		m_bus->tick();
-
 	InterruptType queuedInt = m_interruptManager->getActiveInterrupt();
 	if (queuedInt != InterruptType::None)
 	{
 		if (m_interruptManager->getInterruptsEnabled())
 		{
 			m_interruptManager->disableInterrupts();
+			m_bus->tick();
+			m_bus->tick();
 			m_pushToStack(PC);
 			PC = (uint16_t)queuedInt;
+			m_bus->tick();
 		}
 		m_halted = false;
 	}
 
-	if ((m_EIRequested) && (m_lastOpcode != 0xFB && m_lastOpcode != 0xD9))	//odd hack, essentially only re-enable after an instruction has passed. TODO: EI and then DI overrides the enable
+	m_lastPC = PC;
+	if (!m_halted)
+		m_executeInstruction();
+	else
+		m_bus->tick();
+
+	if ((m_EIRequested) && (m_lastOpcode != 0xFB))	//odd hack, essentially only re-enable after an instruction has passed. TODO: EI and then DI overrides the enable
 	{
 		m_EIRequested = false;
 		m_interruptManager->enableInterrupts();
@@ -1091,7 +1094,7 @@ void CPU::_returnIfCarrySet()
 
 void CPU::_returnFromInterrupt()
 {
-	_enableInterrupts();
+	m_interruptManager->enableInterrupts();
 	uint16_t returnAddress = m_popFromStack();
 	PC = returnAddress;
 	m_bus->tick();
