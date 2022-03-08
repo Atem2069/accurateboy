@@ -19,11 +19,9 @@ private:
 
 	std::shared_ptr<InterruptManager> m_interruptManager;
 
-	uint8_t DIV = 0;
 	uint8_t TIMA = 0;
 	uint8_t TMA = 0;
 	uint8_t TAC = 0;
 
-	unsigned long divCycleDiff = 0;
-	unsigned long timerCycleDiff = 0;
+	uint16_t m_divider = 0;
 };

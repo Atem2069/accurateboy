@@ -18,34 +18,30 @@ void Timer::step()
 
 void Timer::m_tickTCycle()
 {
-	divCycleDiff++;
-	if (divCycleDiff == 256)
-	{
-		divCycleDiff = 0;
-		DIV++;
-	}
+	uint16_t m_lastDivider = m_divider;
+	m_divider++;
 
 	bool timerEnabled = (TAC >> 2) & 0b1;
 	uint8_t timerMode = (TAC & 0b11);
 	if (timerEnabled)
 	{
-		timerCycleDiff++;
-		int cycleThreshold = 0;
-		switch (timerMode)
+		int m_shiftAmount = 0;
+		switch (timerMode)	//the shift is -1 bc it's edge triggered
 		{
 		case 0b00:
-			cycleThreshold = 4194304/4096; break;
+			m_shiftAmount = 9; break;
 		case 0b01:
-			cycleThreshold = 4194304/262144; break;
+			m_shiftAmount = 3; break;
 		case 0b10:
-			cycleThreshold = 4194304/65536; break;
+			m_shiftAmount = 5; break;
 		case 0b11:
-			cycleThreshold = 4194304/16384; break;
+			m_shiftAmount = 7; break;
 		}
 
-		while (timerCycleDiff>=cycleThreshold)
+		bool shouldTick = ((m_lastDivider >> m_shiftAmount) & 0b1) && (!((m_divider >> m_shiftAmount) & 0b1));	//falling edge (1 in last tick, 0 now)
+
+		if(shouldTick)
 		{
-			timerCycleDiff -= cycleThreshold;
 			TIMA++;
 			if (TIMA == 0)
 			{
@@ -62,7 +58,7 @@ uint8_t Timer::read(uint16_t address)
 	switch (address)
 	{
 	case REG_DIV:
-		return DIV; break;
+		return (m_divider >> 8) & 0xFF; break;
 	case REG_TIMA:
 		return TIMA; break;
 	case REG_TMA:
@@ -77,7 +73,7 @@ void Timer::write(uint16_t address, uint8_t value)
 	switch (address)
 	{
 	case REG_DIV:
-		DIV = 0; break;
+		m_divider = 0; break;
 	case REG_TIMA:
 		TIMA = value; break;
 	case REG_TMA:
