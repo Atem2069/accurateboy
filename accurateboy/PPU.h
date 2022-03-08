@@ -42,6 +42,7 @@ private:
 	void m_LCDTransfer();
 	int m_modeCycleDiff = 0;	//holds cycle difference (reset on mode switch)
 	int m_totalLineCycles = 0;	//keeps track of how many cycles passed
+	int m_totalFrameCycles = 0;	//debug
 
 	std::shared_ptr<InterruptManager> m_interruptManager;
 
@@ -51,7 +52,7 @@ private:
 	uint8_t LCDC = {}, STAT = {}, SCX = {}, SCY = {}, WY = {}, WX = {}, LY = {}, LYC = {}, BGP = {}, OBP0 = {}, OBP1 = {};
 
 	//stat interrupt
-	bool m_lastStatState;
+	bool m_lastStatState = false;
 
 	//lcdc bits
 	bool m_getLCDEnabled();

@@ -62,6 +62,7 @@ void PPU::m_hblank()	//mode 0
 {
 	m_modeCycleDiff++;
 	m_totalLineCycles++;
+	m_totalFrameCycles++;
 	if (m_totalLineCycles == 456)	//enter line takes 456 t cycles
 	{
 		m_modeCycleDiff = 0;
@@ -88,12 +89,16 @@ void PPU::m_hblank()	//mode 0
 void PPU::m_vblank()	//mode 1
 {
 	m_modeCycleDiff++;
+	m_totalFrameCycles++;
 	if (m_modeCycleDiff == 456)
 	{
 		m_modeCycleDiff = 0;
 		LY++;
 		if (LY == 154)
 		{
+			if (m_totalFrameCycles != 70224)
+				std::cout << m_totalFrameCycles << '\n';
+			m_totalFrameCycles = 0;
 			LY = 0;				//go back to beginning
 			STAT &= 0b11111100;
 			STAT |= 0b00000010;	//enter mode 2
@@ -105,6 +110,7 @@ void PPU::m_OAMSearch()	//mode 2
 {
 	m_modeCycleDiff++;
 	m_totalLineCycles++;
+	m_totalFrameCycles++;
 	if (m_modeCycleDiff == 80)
 	{
 		m_modeCycleDiff = 0;
@@ -121,6 +127,7 @@ void PPU::m_LCDTransfer()	//mode 3
 {
 	m_modeCycleDiff++;
 	m_totalLineCycles++;
+	m_totalFrameCycles++;
 	if (m_lcdXCoord == 0 && !m_fetcherBeginDelayed && m_modeCycleDiff < 6)
 		return;
 	if (m_lcdXCoord == 0 && !m_fetcherBeginDelayed && m_modeCycleDiff==6)
@@ -170,8 +177,10 @@ void PPU::m_LCDTransfer()	//mode 3
 			case 0b11:
 				finalCol = 0x000000FF; break;
 			}
-
-			m_scratchBuffer[pixelCoord] = finalCol;
+			if (m_getBackgroundPriority())
+				m_scratchBuffer[pixelCoord] = finalCol;
+			else
+				m_scratchBuffer[pixelCoord] = 0xFFFFFFFF;
 			m_lcdXCoord++;
 		}
 
@@ -233,6 +242,7 @@ void PPU::m_fetchTileDataHigh()
 	{
 		m_modeCycleDiff = 0;
 		m_fetcherStage = FetcherStage::PushToFIFO;
+
 		//same thing really, just + 1!
 		int tileDataOffset = (m_getTilemap()) ? 0x0000 : 0x0800;
 		if (!m_getTilemap())
