@@ -1,6 +1,6 @@
 #include"Bus.h"
 
-Bus::Bus(std::vector<uint8_t> romData, std::shared_ptr<InterruptManager>& interruptManager, std::shared_ptr<PPU>& ppu, std::shared_ptr<APU>& apu, std::shared_ptr<Timer>& timer)
+Bus::Bus(std::vector<uint8_t> romData, std::shared_ptr<InterruptManager>& interruptManager, std::shared_ptr<PPU>& ppu, std::shared_ptr<APU>& apu, std::shared_ptr<Timer>& timer, std::shared_ptr<Joypad>& joypad)
 {
 	uint8_t cartType = romData[0x0147];
 	if (cartType >= 0x01 && cartType <= 0x03)
@@ -11,6 +11,7 @@ Bus::Bus(std::vector<uint8_t> romData, std::shared_ptr<InterruptManager>& interr
 	m_ppu = ppu;
 	m_apu = apu;
 	m_timer = timer;
+	m_joypad = joypad;
 	m_inBootRom = true;
 }
 
@@ -58,6 +59,8 @@ uint8_t Bus::read(uint16_t address)
 			return m_interruptManager->read(address); break;
 		case REG_DIV: case REG_TIMA: case REG_TMA: case REG_TAC:
 			return m_timer->read(address); break;
+		case REG_JOYPAD:
+			return m_joypad->read(address); break;
 		}
 	}
 
@@ -99,6 +102,8 @@ void Bus::write(uint16_t address, uint8_t value)
 			m_interruptManager->write(address, value); break;
 		case REG_DIV: case REG_TIMA: case REG_TMA: case REG_TAC:
 			m_timer->write(address, value); break;
+		case REG_JOYPAD:
+			m_joypad->write(address, value); break;
 		case 0xFF01:
 			std::cout << value; break;
 		case 0xFF50:		//boot rom lockout

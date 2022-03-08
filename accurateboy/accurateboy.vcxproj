@@ -164,6 +164,7 @@
     <ClCompile Include="Gameboy.cpp" />
     <ClCompile Include="guiRenderer.cpp" />
     <ClCompile Include="InterruptManager.cpp" />
+    <ClCompile Include="Joypad.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MBC1.cpp" />
@@ -191,6 +192,7 @@
     <ClInclude Include="Gameboy.h" />
     <ClInclude Include="guiRenderer.h" />
     <ClInclude Include="InterruptManager.h" />
+    <ClInclude Include="Joypad.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="MBC.h" />
     <ClInclude Include="PPU.h" />

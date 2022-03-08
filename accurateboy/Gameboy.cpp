@@ -31,7 +31,7 @@ void GameBoy::run()
 		}
 
 		m_cpu->step();
-
+		m_joypad->updateKeys(m_joyState);
 
 	}
 
@@ -64,7 +64,8 @@ void GameBoy::m_initialise()
 	m_ppu = std::make_shared<PPU>(m_interruptManager);
 	m_apu = std::make_shared<APU>();
 	m_timer = std::make_shared<Timer>(m_interruptManager);
-	m_bus = std::make_shared<Bus>(romData, m_interruptManager, m_ppu,m_apu,m_timer);
+	m_joypad = std::make_shared<Joypad>();
+	m_bus = std::make_shared<Bus>(romData, m_interruptManager, m_ppu,m_apu,m_timer, m_joypad);
 	m_cpu = std::make_shared<CPU>(m_bus, m_interruptManager);
 
 	Config::GB.System.reset = false;
@@ -78,6 +79,7 @@ void GameBoy::m_destroy()
 	m_interruptManager.reset();
 	m_apu.reset();
 	m_timer.reset();
+	m_joypad.reset();
 }
 
 void GameBoy::m_displayWorker()
@@ -91,6 +93,11 @@ void GameBoy::m_displayWorker()
 		if(m_ppu.get())
 			m_display->upload(m_ppu->getDisplayBuffer(), true);
 		m_display->draw();
+
+		m_joyState = { m_display->getKeyPressed(GLFW_KEY_X),m_display->getKeyPressed(GLFW_KEY_Z),
+			m_display->getKeyPressed(GLFW_KEY_UP),m_display->getKeyPressed(GLFW_KEY_DOWN),
+			m_display->getKeyPressed(GLFW_KEY_LEFT),m_display->getKeyPressed(GLFW_KEY_RIGHT),
+			m_display->getKeyPressed(GLFW_KEY_ENTER),m_display->getKeyPressed(GLFW_KEY_RIGHT_SHIFT) };
 	}
 	m_shouldStop = true;
 
