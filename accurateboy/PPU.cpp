@@ -213,11 +213,11 @@ void PPU::m_fetchTileNumber()
 		m_modeCycleDiff = 0;
 		m_fetcherStage = FetcherStage::FetchTileDataLow;
 
-		int tileMapAddr = (m_getBackgroundNametable() ? 0x1c00 : 0x1800);
+		uint16_t tileMapAddr = (m_getBackgroundNametable() ? 0x1c00 : 0x1800);
 		//assume always fetching bg for now, fix later
-		int xOffset = SCX / 8;
-		int yOffset = 32 * (((LY + SCY) & 0xFF) / 8);
-		int tileMapOffset = (m_fetcherX + xOffset + yOffset) % 1024;
+		uint16_t xOffset = (m_fetcherX + (SCX / 8)) & 0x1f;
+		uint16_t yOffset = 32 * (((LY + SCY) & 0xFF) / 8);
+		uint16_t tileMapOffset = (xOffset + yOffset) & 0x3ff;
 		m_fetcherX++;
 
 		tileMapAddr += tileMapOffset;
@@ -234,11 +234,11 @@ void PPU::m_fetchTileDataLow()
 		m_modeCycleDiff = 0;
 		m_fetcherStage = FetcherStage::FetchTileDataHigh;
 
-		int tileDataOffset = (m_getTilemap()) ? 0x0000 : 0x0800;
+		uint16_t tileDataOffset = (m_getTilemap()) ? 0x0000 : 0x1000;
 		if (!m_getTilemap())
-			m_tileNumber += 128;
-
-		tileDataOffset += m_tileNumber * 16;	//*16 because each tile is 16 bytes (2 bytes per row)
+			tileDataOffset += (int8_t)m_tileNumber * 16;
+		else
+			tileDataOffset += m_tileNumber * 16;	//*16 because each tile is 16 bytes (2 bytes per row)
 		tileDataOffset += (2 * ((LY + SCY) % 8));	//then extract correct row based on ly + scy mod 8
 		
 		m_tileDataLow = m_VRAM[tileDataOffset];
@@ -253,10 +253,11 @@ void PPU::m_fetchTileDataHigh()
 		m_fetcherStage = FetcherStage::PushToFIFO;
 
 		//same thing really, just + 1!
-		int tileDataOffset = (m_getTilemap()) ? 0x0000 : 0x0800;
-		//don't fix tile number again bc we already did in the last stage
-
-		tileDataOffset += m_tileNumber * 16;	//*16 because each tile is 16 bytes (2 bytes per row)
+		uint16_t tileDataOffset = (m_getTilemap()) ? 0x0000 : 0x1000;
+		if (!m_getTilemap())
+			tileDataOffset += (int8_t)m_tileNumber * 16;
+		else
+			tileDataOffset += m_tileNumber * 16;	//*16 because each tile is 16 bytes (2 bytes per row)
 		tileDataOffset += (2 * ((LY + SCY) % 8));	//then extract correct row based on ly + scy mod 8
 
 		m_tileDataHigh = m_VRAM[tileDataOffset+1];
