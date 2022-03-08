@@ -1,5 +1,11 @@
 # accurateboy
 
-gbemu rewrite with subinstruction accuracy and aims to include a fully accurate pixel FIFO
+GBEmu rewrite with much higher accuracy, and (WIP) accurate Pixel FIFO renderer.
 
-only contains apu so you can hear tetris music :) video output soon
+### Tests
+ - [x] cpu_instrs
+ - [x] instr_timing
+ - [x] mem_timing
+ - [x] mem_timing-2
+ - [ ] dmg-acid2 (No window/sprite support currently)
+ - [ ] dmg_sound 
