@@ -41,7 +41,7 @@ void CPU::m_executeInstruction()
 
 	switch (opcode)
 	{
-	case 0x0: m_cycleCount++; break;
+	case 0x0: break;
 	case 0x1: _loadImmPairRegister(BC); break;
 	case 0x2: _storeRegisterAtPairRegister(BC, AF.high); break;
 	case 0x3: _incrementPairRegister(BC); break;

@@ -63,7 +63,8 @@ void GameBoy::m_initialise()
 	m_interruptManager = std::make_shared<InterruptManager>();
 	m_ppu = std::make_shared<PPU>(m_interruptManager);
 	m_apu = std::make_shared<APU>();
-	m_bus = std::make_shared<Bus>(romData, m_interruptManager, m_ppu,m_apu);
+	m_timer = std::make_shared<Timer>(m_interruptManager);
+	m_bus = std::make_shared<Bus>(romData, m_interruptManager, m_ppu,m_apu,m_timer);
 	m_cpu = std::make_shared<CPU>(m_bus, m_interruptManager);
 
 	Config::GB.System.reset = false;
@@ -76,6 +77,7 @@ void GameBoy::m_destroy()
 	m_bus.reset();
 	m_interruptManager.reset();
 	m_apu.reset();
+	m_timer.reset();
 }
 
 void GameBoy::m_displayWorker()
