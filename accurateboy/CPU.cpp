@@ -15,7 +15,6 @@ CPU::~CPU()
 void CPU::step()
 {
 	m_lastPC = PC;
-
 	if (!m_halted)
 		m_executeInstruction();
 	else
@@ -33,12 +32,17 @@ void CPU::step()
 		m_halted = false;
 	}
 
+	if ((m_EIRequested) && (m_lastOpcode != 0xFB && m_lastOpcode != 0xD9))	//odd hack, essentially only re-enable after an instruction has passed. TODO: EI and then DI overrides the enable
+	{
+		m_EIRequested = false;
+		m_interruptManager->enableInterrupts();
+	}
 }
 
 void CPU::m_executeInstruction()
 {
 	uint8_t opcode = m_fetch();
-
+	m_lastOpcode = opcode;
 	switch (opcode)
 	{
 	case 0x0: break;
@@ -274,7 +278,7 @@ void CPU::m_executeInstruction()
 	case 0xE6: _andValue(); break;
 	case 0xE7: _resetToVector(4); break;
 	case 0xE8: _addSignedValueToPairRegister(SP); break;
-	case 0xE9: PC = HL.reg; m_cycleCount++;  break;	//lazy implementation but instruction is 1-cycle anyway
+	case 0xE9: PC = HL.reg;  break;	//lazy implementation but instruction is 1-cycle anyway
 	case 0xEA: _storeRegisterAtAddress(AF.high); break;
 //	case 0xEB: break;                                   Invalid opcode decoding EB
 //	case 0xEC: break;                                   Invalid opcode decoding EC
@@ -290,7 +294,7 @@ void CPU::m_executeInstruction()
 	case 0xF6: _orValue(); break;
 	case 0xF7: _resetToVector(6); break;
 	case 0xF8: _loadHLStackIdx(); break;
-	case 0xF9: SP.reg = HL.reg; m_cycleCount += 2; break;	
+	case 0xF9: SP.reg = HL.reg; m_bus->tick(); break;
 	case 0xFA: _loadRegisterFromAddress(AF.high); break;
 	case 0xFB: _enableInterrupts(); break;
 //	case 0xFC: break;                                   Invalid opcode decoding FC
@@ -304,6 +308,7 @@ void CPU::m_executeInstruction()
 void CPU::m_executePrefixedInstruction()
 {
 	uint8_t opcode = m_fetch();
+	m_lastOpcode = opcode;
 
 	switch (opcode)
 	{
@@ -1086,7 +1091,7 @@ void CPU::_returnIfCarrySet()
 
 void CPU::_returnFromInterrupt()
 {
-	m_interruptManager->enableInterrupts();
+	_enableInterrupts();
 	uint16_t returnAddress = m_popFromStack();
 	PC = returnAddress;
 	m_bus->tick();
@@ -1403,7 +1408,7 @@ void CPU::_disableInterrupts()
 
 void CPU::_enableInterrupts()
 {
-	m_interruptManager->enableInterrupts();
+	m_EIRequested = true;
 }
 
 void CPU::_stop()

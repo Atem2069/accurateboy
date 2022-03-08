@@ -51,7 +51,9 @@ private:
 	bool m_getSubtractFlag();
 	void m_setSubtractFlag(bool value);
 
-	std::string m_lastInstruction = "";
+	uint8_t m_lastOpcode = 0;
+
+	bool m_EIRequested = false;
 
 	std::shared_ptr<Bus> m_bus;
 	std::shared_ptr<InterruptManager> m_interruptManager;

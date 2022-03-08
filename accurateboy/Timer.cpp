@@ -43,9 +43,9 @@ void Timer::m_tickTCycle()
 			cycleThreshold = 4194304/16384; break;
 		}
 
-		if (timerCycleDiff==cycleThreshold)
+		while (timerCycleDiff>=cycleThreshold)
 		{
-			timerCycleDiff = 0;
+			timerCycleDiff -= cycleThreshold;
 			TIMA++;
 			if (TIMA == 0)
 			{
@@ -83,8 +83,6 @@ void Timer::write(uint16_t address, uint8_t value)
 	case REG_TMA:
 		TMA = value; break;
 	case REG_TAC:
-		if ((value & 0b11) != (TAC & 0b11))
-			timerCycleDiff = 0;
 		TAC = value; break;
 	}
 }
