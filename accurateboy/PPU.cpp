@@ -22,7 +22,14 @@ void PPU::step()
 void PPU::m_tickTCycle()
 {
 	if (!m_getLCDEnabled())
+	{
+		STAT &= 0b11111100;
+		m_totalFrameCycles = 0;
+		m_totalLineCycles = 0;
+		m_modeCycleDiff = 0;
+		LY = 0;
 		return;
+	}
 	uint8_t curPPUMode = STAT & 0b11;
 
 	//todo here: STAT interrupts
@@ -90,14 +97,18 @@ void PPU::m_vblank()	//mode 1
 {
 	m_modeCycleDiff++;
 	m_totalFrameCycles++;
+
+	if (m_modeCycleDiff == 4 && LY == 153)
+		LY = 0;
+
 	if (m_modeCycleDiff == 456)
 	{
 		m_modeCycleDiff = 0;
 		LY++;
-		if (LY == 154)
+		if (LY == 1)
 		{
 			if (m_totalFrameCycles != 70224)
-				std::cout << m_totalFrameCycles << '\n';
+				std::cout << "Timing disrepancy - frame should take 70224 cycles, but took " << m_totalFrameCycles << '\n';
 			m_totalFrameCycles = 0;
 			LY = 0;				//go back to beginning
 			STAT &= 0b11111100;
