@@ -213,18 +213,16 @@ void PPU::m_fetchTileNumber()
 		m_modeCycleDiff = 0;
 		m_fetcherStage = FetcherStage::FetchTileDataLow;
 
+		int tileMapAddr = (m_getBackgroundNametable() ? 0x1c00 : 0x1800);
 		//assume always fetching bg for now, fix later
 		int xOffset = SCX / 8;
 		int yOffset = 32 * (((LY + SCY) & 0xFF) / 8);
 		int tileMapOffset = (m_fetcherX + xOffset + yOffset) % 1024;
 		m_fetcherX++;
 
-		if (m_getBackgroundNametable())
-			tileMapOffset += 0x1C00;
-		else
-			tileMapOffset += 0x1800;
+		tileMapAddr += tileMapOffset;
 
-		m_tileNumber = m_VRAM[tileMapOffset];
+		m_tileNumber = m_VRAM[tileMapAddr];
 
 	}
 }
@@ -256,8 +254,7 @@ void PPU::m_fetchTileDataHigh()
 
 		//same thing really, just + 1!
 		int tileDataOffset = (m_getTilemap()) ? 0x0000 : 0x0800;
-		if (!m_getTilemap())
-			m_tileNumber += 128;
+		//don't fix tile number again bc we already did in the last stage
 
 		tileDataOffset += m_tileNumber * 16;	//*16 because each tile is 16 bytes (2 bytes per row)
 		tileDataOffset += (2 * ((LY + SCY) % 8));	//then extract correct row based on ly + scy mod 8

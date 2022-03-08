@@ -69,7 +69,7 @@ private:
 	FetcherStage m_fetcherStage;
 	int m_fetcherX = 0;
 	int m_lcdXCoord = 0;
-	int m_tileNumber = 0;
+	uint8_t m_tileNumber = 0;
 	uint8_t m_tileDataLow = 0;
 	uint8_t m_tileDataHigh = 0;
 	bool m_fetcherBeginDelayed = false;
