@@ -126,13 +126,16 @@ void PPU::m_OAMSearch()	//mode 2
 	if (m_modeCycleDiff == 2)
 	{
 		m_modeCycleDiff = 0;
-		OAMEntry tempOAMEntry;
+		OAMEntry tempOAMEntry = {};
 		tempOAMEntry.y = m_OAM[(m_spritesChecked * 4)];
 		tempOAMEntry.x = m_OAM[(m_spritesChecked * 4) + 1];
 		tempOAMEntry.tileNumber = m_OAM[(m_spritesChecked * 4) + 2];
 		tempOAMEntry.attributes = m_OAM[(m_spritesChecked * 4) + 3];
 
-		if (LY >= tempOAMEntry.y && m_spriteBufferIndex < 10)
+		//TODO: 8x16 sprites
+		int scanlineDiff = LY - tempOAMEntry.y;
+
+		if ((LY >= tempOAMEntry.y && scanlineDiff < 8) && m_spriteBufferIndex < 10)
 			m_spriteBuffer[m_spriteBufferIndex++] = tempOAMEntry;
 
 		m_spritesChecked++;
@@ -194,7 +197,7 @@ void PPU::m_LCDTransfer()	//mode 3
 	}
 
 	//pop off, push to display
-	if (m_backgroundFIFO.size() > 0)
+	if (m_backgroundFIFO.size() > 0 && !m_spriteFetchInProgress)
 	{
 		
 		FIFOPixel cur = m_backgroundFIFO.front();
@@ -227,7 +230,27 @@ void PPU::m_LCDTransfer()	//mode 3
 			else
 				m_scratchBuffer[pixelCoord] = 0xFFFFFFFF;
 			m_lcdXCoord++;
+
+			if (m_getSpritesEnabled())
+			{
+				for (int i = 0; i < 10; i++)
+				{
+					if ((m_lcdXCoord + 8) >= m_spriteBuffer[i].x && ((m_lcdXCoord + 8) - m_spriteBuffer[i].x) < 8 && m_spriteBuffer[i].x != 0 && m_spriteBuffer[i].x < 168 && !m_spriteBuffer[i].rendered)
+					{
+						m_spriteBuffer[i].rendered = true;
+						m_consideredSpriteIndex = i;
+						m_modeCycleDiff = 0;
+						if (m_fetcherStage != FetcherStage::FetchTileNumber)
+						{
+							m_fetcherX--;
+						}
+						m_fetcherStage = FetcherStage::FetchTileNumber;
+						m_spriteFetchInProgress = true;
+					}
+				}
+			}
 		}
+
 	}
 
 	//if we run into window tiles, reset FIFO
@@ -351,22 +374,36 @@ void PPU::m_pushToFIFO()
 
 void PPU::m_spriteFetchTileNumber()
 {
-
+	if (m_modeCycleDiff == 2)
+	{
+		m_modeCycleDiff = 0;
+		m_fetcherStage = FetcherStage::FetchTileDataLow;
+	}
 }
 
 void PPU::m_spriteFetchTileDataLow()
 {
-
+	if (m_modeCycleDiff == 2)
+	{
+		m_modeCycleDiff = 0;
+		m_fetcherStage = FetcherStage::FetchTileDataHigh;
+	}
 }
 
 void PPU::m_spriteFetchTileDataHigh()
 {
-
+	if (m_modeCycleDiff == 2)
+	{
+		m_modeCycleDiff = 0;
+		m_fetcherStage = FetcherStage::PushToFIFO;
+	}
 }
 
 void PPU::m_spritePushToFIFO()
 {
-
+	m_modeCycleDiff = 0;
+	m_fetcherStage = FetcherStage::FetchTileNumber;
+	m_spriteFetchInProgress = false;
 }
 
 uint8_t PPU::read(uint16_t address)

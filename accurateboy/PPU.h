@@ -29,6 +29,7 @@ struct OAMEntry
 	uint8_t y;
 	uint8_t tileNumber;
 	uint8_t attributes;
+	bool rendered;
 };
 
 class PPU
@@ -99,6 +100,7 @@ private:
 	OAMEntry m_spriteBuffer[10];
 	int m_spriteBufferIndex = 0;
 	int m_spritesChecked = 0;
+	int m_consideredSpriteIndex = 0;
 
 	uint32_t m_scratchBuffer[160 * 144];
 	uint32_t m_backBuffer[160 * 144];
