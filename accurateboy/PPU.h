@@ -23,6 +23,14 @@ struct FIFOPixel
 	int paletteID;	//not really used yet
 };
 
+struct OAMEntry
+{
+	uint8_t x;
+	uint8_t y;
+	uint8_t tileNumber;
+	uint8_t attributes;
+};
+
 class PPU
 {
 public:
@@ -88,6 +96,9 @@ private:
 	void m_spriteFetchTileDataLow();
 	void m_spriteFetchTileDataHigh();
 	void m_spritePushToFIFO();
+	OAMEntry m_spriteBuffer[10];
+	int m_spriteBufferIndex = 0;
+	int m_spritesChecked = 0;
 
 	uint32_t m_scratchBuffer[160 * 144];
 	uint32_t m_backBuffer[160 * 144];

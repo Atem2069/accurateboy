@@ -123,16 +123,31 @@ void PPU::m_OAMSearch()	//mode 2
 	m_modeCycleDiff++;
 	m_totalLineCycles++;
 	m_totalFrameCycles++;
-	if (m_modeCycleDiff == 80)
+	if (m_modeCycleDiff == 2)
 	{
 		m_modeCycleDiff = 0;
-		STAT &= 0b11111100;
-		STAT |= 0b00000011;	//enter mode 3
-		m_fetcherX = 0;									//resetting fifo as we enter mode 3
-		m_lcdXCoord = 0;
-		m_fetcherStage = FetcherStage::FetchTileNumber;
-		m_fetcherBeginDelayed = false;
-		m_fetchingWindowTiles = false;
+		OAMEntry tempOAMEntry;
+		tempOAMEntry.y = m_OAM[(m_spritesChecked * 4)];
+		tempOAMEntry.x = m_OAM[(m_spritesChecked * 4) + 1];
+		tempOAMEntry.tileNumber = m_OAM[(m_spritesChecked * 4) + 2];
+		tempOAMEntry.attributes = m_OAM[(m_spritesChecked * 4) + 3];
+
+		if (LY >= tempOAMEntry.y && m_spriteBufferIndex < 10)
+			m_spriteBuffer[m_spriteBufferIndex++] = tempOAMEntry;
+
+		m_spritesChecked++;
+		if (m_spritesChecked == 40)
+		{
+			m_spritesChecked = 0;
+			m_spriteBufferIndex = 0;
+			STAT &= 0b11111100;
+			STAT |= 0b00000011;
+			m_fetcherX = 0;
+			m_lcdXCoord = 0;
+			m_fetcherStage = FetcherStage::FetchTileNumber;
+			m_fetcherBeginDelayed = false;
+			m_fetchingWindowTiles = false;
+		}
 	}
 }
 
