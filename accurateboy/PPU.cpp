@@ -133,9 +133,9 @@ void PPU::m_OAMSearch()	//mode 2
 		tempOAMEntry.attributes = m_OAM[(m_spritesChecked * 4) + 3];
 
 		//TODO: 8x16 sprites
-		int scanlineDiff = LY - tempOAMEntry.y;
+		int scanlineDiff = (LY+16) - tempOAMEntry.y;
 
-		if ((LY >= tempOAMEntry.y && scanlineDiff < 8) && m_spriteBufferIndex < 10)
+		if ((LY+16 >= tempOAMEntry.y && scanlineDiff < 8) && m_spriteBufferIndex < 10)
 			m_spriteBuffer[m_spriteBufferIndex++] = tempOAMEntry;
 
 		m_spritesChecked++;
@@ -209,8 +209,28 @@ void PPU::m_LCDTransfer()	//mode 3
 		}
 		else if((m_lcdXCoord==0 && m_discardCounter == (SCX % 8)) || m_lcdXCoord>0 || m_fetchingWindowTiles)
 		{
-			m_discardCounter = 0;
+			/*m_discardCounter = 0;
 			uint8_t col = (BGP >> (cur.colorID * 2)) & 0b11;
+			int pixelCoord = (LY * 160) + m_lcdXCoord;
+			uint32_t finalCol = 0;*/
+			m_discardCounter = 0;
+
+			FIFOPixel spritePixel = {};
+			if (!m_spriteFIFO.empty())
+			{
+				spritePixel = m_spriteFIFO.front();
+				m_spriteFIFO.pop();
+			}
+
+			uint8_t col = (BGP >> (cur.colorID * 2)) & 0b11;
+			if (spritePixel.colorID != 0 && (cur.colorID == 0 || spritePixel.hasPriority))
+			{
+				if (spritePixel.paletteID == 0)
+					col = (OBP0 >> (spritePixel.colorID * 2)) & 0b11;
+				else
+					col = (OBP1 >> (spritePixel.colorID * 2)) & 0b11;
+			}
+
 			int pixelCoord = (LY * 160) + m_lcdXCoord;
 			uint32_t finalCol = 0;
 			
@@ -235,12 +255,12 @@ void PPU::m_LCDTransfer()	//mode 3
 			{
 				for (int i = 0; i < 10; i++)
 				{
-					if ((m_lcdXCoord + 8) >= m_spriteBuffer[i].x && ((m_lcdXCoord + 8) - m_spriteBuffer[i].x) < 8 && m_spriteBuffer[i].x != 0 && m_spriteBuffer[i].x < 168 && !m_spriteBuffer[i].rendered)
+					if ((m_lcdXCoord + 8) >= m_spriteBuffer[i].x && ((m_lcdXCoord + 8) - m_spriteBuffer[i].x) < 8 && m_spriteBuffer[i].x != 0 && m_spriteBuffer[i].x < 168 && !m_spriteBuffer[i].rendered)	//jesus.
 					{
 						m_spriteBuffer[i].rendered = true;
 						m_consideredSpriteIndex = i;
 						m_modeCycleDiff = 0;
-						if (m_fetcherStage != FetcherStage::FetchTileNumber)
+						if (m_fetcherStage != FetcherStage::FetchTileNumber)	//fetcher might have already advanced if it's in another step, so set it back to ensure it gets rendered again
 						{
 							m_fetcherX--;
 						}
@@ -378,6 +398,8 @@ void PPU::m_spriteFetchTileNumber()
 	{
 		m_modeCycleDiff = 0;
 		m_fetcherStage = FetcherStage::FetchTileDataLow;
+
+		m_tileNumber = m_spriteBuffer[m_consideredSpriteIndex].tileNumber;
 	}
 }
 
@@ -387,6 +409,10 @@ void PPU::m_spriteFetchTileDataLow()
 	{
 		m_modeCycleDiff = 0;
 		m_fetcherStage = FetcherStage::FetchTileDataHigh;
+
+		uint16_t tileDataOffset = m_tileNumber * 16;
+		tileDataOffset += (2 * ((LY % 8)));	//then extract correct row based on ly + scy mod 8
+		m_tileDataLow = m_VRAM[tileDataOffset];
 	}
 }
 
@@ -396,6 +422,10 @@ void PPU::m_spriteFetchTileDataHigh()
 	{
 		m_modeCycleDiff = 0;
 		m_fetcherStage = FetcherStage::PushToFIFO;
+
+		uint16_t tileDataOffset = m_tileNumber * 16;
+		tileDataOffset += (2 * ((LY % 8)));	//then extract correct row based on ly + scy mod 8
+		m_tileDataHigh = m_VRAM[tileDataOffset+1];
 	}
 }
 
@@ -404,6 +434,32 @@ void PPU::m_spritePushToFIFO()
 	m_modeCycleDiff = 0;
 	m_fetcherStage = FetcherStage::FetchTileNumber;
 	m_spriteFetchInProgress = false;
+
+	OAMEntry curSprite = m_spriteBuffer[m_consideredSpriteIndex];
+
+	int loadedPixels = m_spriteFIFO.size();
+	int xCutoff = 0;
+	if ((curSprite.x) < 8)			//todo: double check
+		xCutoff = 8 - (curSprite.x);
+
+	int finalOffset = std::max(loadedPixels, xCutoff);
+
+	for (int i = finalOffset; i < 8; i++)
+	{
+		uint8_t colHigh = (m_tileDataHigh >> (7 - i)) & 0b1;
+		uint8_t colLow = (m_tileDataLow >> (7 - i)) & 0b1;
+		uint8_t colID = (colHigh << 1) | colLow;
+
+		bool priority = !((curSprite.attributes >> 7) & 0b1);
+		int paletteID = ((curSprite.attributes) & 0b11);
+		//hardcoded for now, no sprites yet
+		FIFOPixel tempPixel = {};
+		tempPixel.colorID = colID;
+		tempPixel.hasPriority = priority;
+		tempPixel.paletteID = paletteID;
+
+		m_spriteFIFO.push(tempPixel);
+	}
 }
 
 uint8_t PPU::read(uint16_t address)
