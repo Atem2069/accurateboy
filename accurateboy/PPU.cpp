@@ -255,17 +255,23 @@ void PPU::m_LCDTransfer()	//mode 3
 			{
 				for (int i = 0; i < 10; i++)
 				{
-					if ((m_lcdXCoord + 8) >= m_spriteBuffer[i].x && ((m_lcdXCoord + 8) - m_spriteBuffer[i].x) < 8 && m_spriteBuffer[i].x != 0 && m_spriteBuffer[i].x < 168 && !m_spriteBuffer[i].rendered)	//jesus.
+					if ((m_lcdXCoord + 8) == m_spriteBuffer[i].x && ((m_lcdXCoord + 8) - m_spriteBuffer[i].x) < 8 && m_spriteBuffer[i].x != 0 && m_spriteBuffer[i].x < 168 && !m_spriteBuffer[i].rendered)	//jesus.
 					{
-						m_spriteBuffer[i].rendered = true;
-						m_consideredSpriteIndex = i;
-						m_modeCycleDiff = 0;
-						if (m_fetcherStage != FetcherStage::FetchTileNumber)	//fetcher might have already advanced if it's in another step, so set it back to ensure it gets rendered again
+						//check if sprite already rendered at this x
+						bool skip = false;
+						for (int j = 0; j < i; j++)
+							if (m_spriteBuffer[j].x == m_spriteBuffer[i].x)
+								skip = true;
+						if (!skip)
 						{
-							m_fetcherX--;
+							m_spriteBuffer[i].rendered = true;
+							m_consideredSpriteIndex = i;
+							m_modeCycleDiff = 0;
+							if (m_fetcherStage != FetcherStage::FetchTileNumber)	//fetcher might have already advanced if it's in another step, so set it back to ensure it gets rendered again
+								m_fetcherX--;
+							m_fetcherStage = FetcherStage::FetchTileNumber;
+							m_spriteFetchInProgress = true;
 						}
-						m_fetcherStage = FetcherStage::FetchTileNumber;
-						m_spriteFetchInProgress = true;
 					}
 				}
 			}
