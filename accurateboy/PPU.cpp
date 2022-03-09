@@ -149,16 +149,33 @@ void PPU::m_LCDTransfer()	//mode 3
 		m_fetcherBeginDelayed = true;
 	}
 
-	switch (m_fetcherStage)
+	if (!m_spriteFetchInProgress)
 	{
-	case FetcherStage::FetchTileNumber:
-		m_fetchTileNumber(); break;
-	case FetcherStage::FetchTileDataHigh:
-		m_fetchTileDataHigh(); break;
-	case FetcherStage::FetchTileDataLow:
-		m_fetchTileDataLow(); break;
-	case FetcherStage::PushToFIFO:
-		m_pushToFIFO(); break;
+		switch (m_fetcherStage)
+		{
+		case FetcherStage::FetchTileNumber:
+			m_fetchTileNumber(); break;
+		case FetcherStage::FetchTileDataLow:
+			m_fetchTileDataLow(); break;
+		case FetcherStage::FetchTileDataHigh:
+			m_fetchTileDataHigh(); break;
+		case FetcherStage::PushToFIFO:
+			m_pushToFIFO(); break;
+		}
+	}
+	else
+	{
+		switch (m_fetcherStage)
+		{
+		case FetcherStage::FetchTileNumber:
+			m_spriteFetchTileNumber(); break;
+		case FetcherStage::FetchTileDataLow:
+			m_spriteFetchTileDataLow(); break;
+		case FetcherStage::FetchTileDataHigh:
+			m_spriteFetchTileDataHigh(); break;
+		case FetcherStage::PushToFIFO:
+			m_spritePushToFIFO(); break;
+		}
 	}
 
 	//pop off, push to display
@@ -315,6 +332,26 @@ void PPU::m_pushToFIFO()
 			m_backgroundFIFO.push(tempPixel);
 		}
 	}
+}
+
+void PPU::m_spriteFetchTileNumber()
+{
+
+}
+
+void PPU::m_spriteFetchTileDataLow()
+{
+
+}
+
+void PPU::m_spriteFetchTileDataHigh()
+{
+
+}
+
+void PPU::m_spritePushToFIFO()
+{
+
 }
 
 uint8_t PPU::read(uint16_t address)

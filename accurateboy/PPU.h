@@ -77,10 +77,17 @@ private:
 	uint8_t m_windowLineCounter = 0;
 	int m_discardCounter = 0;
 
+	bool m_spriteFetchInProgress = false;
+
 	void m_fetchTileNumber();
 	void m_fetchTileDataLow();
 	void m_fetchTileDataHigh();
 	void m_pushToFIFO();
+
+	void m_spriteFetchTileNumber();
+	void m_spriteFetchTileDataLow();
+	void m_spriteFetchTileDataHigh();
+	void m_spritePushToFIFO();
 
 	uint32_t m_scratchBuffer[160 * 144];
 	uint32_t m_backBuffer[160 * 144];
