@@ -255,7 +255,7 @@ void PPU::m_LCDTransfer()	//mode 3
 			{
 				for (int i = 0; i < 10; i++)
 				{
-					if ((m_lcdXCoord + 8) == m_spriteBuffer[i].x && ((m_lcdXCoord + 8) - m_spriteBuffer[i].x) < 8 && m_spriteBuffer[i].x != 0 && m_spriteBuffer[i].x < 168 && !m_spriteBuffer[i].rendered)	//jesus.
+					if ((m_lcdXCoord + 8) >= m_spriteBuffer[i].x && ((m_lcdXCoord + 8) - m_spriteBuffer[i].x) < 8 && m_spriteBuffer[i].x != 0 && m_spriteBuffer[i].x < 168 && !m_spriteBuffer[i].rendered)	//jesus.
 					{
 						//check if sprite already rendered at this x
 						bool skip = false;
