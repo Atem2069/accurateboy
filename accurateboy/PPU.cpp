@@ -134,8 +134,8 @@ void PPU::m_OAMSearch()	//mode 2
 
 		//TODO: 8x16 sprites
 		int scanlineDiff = (LY+16) - tempOAMEntry.y;
-
-		if ((LY+16 >= tempOAMEntry.y && scanlineDiff < 8) && m_spriteBufferIndex < 10)
+		bool inSpriteBounds = (scanlineDiff < 16 && m_getSpriteSize()) || (scanlineDiff < 8 && !m_getSpriteSize());
+		if (LY+16 >= tempOAMEntry.y && inSpriteBounds && tempOAMEntry.y && tempOAMEntry.y < 160 && m_spriteBufferIndex < 10)
 			m_spriteBuffer[m_spriteBufferIndex++] = tempOAMEntry;
 
 		m_spritesChecked++;
@@ -293,6 +293,8 @@ void PPU::m_LCDTransfer()	//mode 3
 
 		while (m_backgroundFIFO.size() > 0)
 			m_backgroundFIFO.pop();
+		while (m_spriteFIFO.size() > 0)
+			m_spriteFIFO.pop();
 		m_modeCycleDiff = 0;
 		STAT &= 0b11111100;
 	}
@@ -399,7 +401,19 @@ void PPU::m_spriteFetchTileNumber()
 		m_modeCycleDiff = 0;
 		m_fetcherStage = FetcherStage::FetchTileDataLow;
 
-		m_tileNumber = m_spriteBuffer[m_consideredSpriteIndex].tileNumber;
+		OAMEntry curSprite = m_spriteBuffer[m_consideredSpriteIndex];
+		bool yFlip = ((curSprite.attributes >> 6) & 0b1);
+		m_tileNumber = curSprite.tileNumber;
+		if (m_getSpriteSize())
+		{
+			uint16_t diff = ((LY + 16) - curSprite.y);
+			if (yFlip)
+				diff = 15 - diff;
+			if (diff >= 8)
+				m_tileNumber |= 0x01;
+			else
+				m_tileNumber &= 0xFE;
+		}
 	}
 }
 
@@ -410,8 +424,16 @@ void PPU::m_spriteFetchTileDataLow()
 		m_modeCycleDiff = 0;
 		m_fetcherStage = FetcherStage::FetchTileDataHigh;
 
+		OAMEntry curSprite = m_spriteBuffer[m_consideredSpriteIndex];
+		bool yFlip = ((curSprite.attributes >> 6) & 0b1);
+
 		uint16_t tileDataOffset = m_tileNumber * 16;
-		tileDataOffset += (2 * ((LY % 8)));	//then extract correct row based on ly + scy mod 8
+		uint16_t diff = ((LY + 16) - curSprite.y);
+		int flipOffset = m_getSpriteSize() ? 15 : 7;
+		if (!yFlip)
+			tileDataOffset += (2 * ((diff % 8)));	//then extract correct row based on ly + scy mod 8
+		else
+			tileDataOffset += (2 * ((flipOffset - diff) % 8));
 		m_tileDataLow = m_VRAM[tileDataOffset];
 	}
 }
@@ -423,8 +445,17 @@ void PPU::m_spriteFetchTileDataHigh()
 		m_modeCycleDiff = 0;
 		m_fetcherStage = FetcherStage::PushToFIFO;
 
+		OAMEntry curSprite = m_spriteBuffer[m_consideredSpriteIndex];
+		bool yFlip = ((curSprite.attributes >> 6) & 0b1);
+
 		uint16_t tileDataOffset = m_tileNumber * 16;
-		tileDataOffset += (2 * ((LY % 8)));	//then extract correct row based on ly + scy mod 8
+
+		uint16_t diff = ((LY + 16) - curSprite.y);
+		int flipOffset = m_getSpriteSize() ? 15 : 7;
+		if (!yFlip)
+			tileDataOffset += (2 * (diff % 8));	//then extract correct row based on ly + scy mod 8
+		else
+			tileDataOffset += (2 * ((flipOffset - diff) % 8));
 		m_tileDataHigh = m_VRAM[tileDataOffset+1];
 	}
 }
@@ -436,6 +467,7 @@ void PPU::m_spritePushToFIFO()
 	m_spriteFetchInProgress = false;
 
 	OAMEntry curSprite = m_spriteBuffer[m_consideredSpriteIndex];
+	bool xFlip = ((curSprite.attributes >> 5) & 0b1);
 
 	int loadedPixels = m_spriteFIFO.size();
 	int xCutoff = 0;
@@ -446,17 +478,23 @@ void PPU::m_spritePushToFIFO()
 
 	for (int i = finalOffset; i < 8; i++)
 	{
-		uint8_t colHigh = (m_tileDataHigh >> (7 - i)) & 0b1;
-		uint8_t colLow = (m_tileDataLow >> (7 - i)) & 0b1;
+		uint8_t shiftOffset = 7 - i;
+		if (xFlip)
+			shiftOffset = i;
+		uint8_t colHigh = (m_tileDataHigh >> shiftOffset) & 0b1;
+		uint8_t colLow = (m_tileDataLow >> shiftOffset) & 0b1;
 		uint8_t colID = (colHigh << 1) | colLow;
 
 		bool priority = !((curSprite.attributes >> 7) & 0b1);
-		int paletteID = ((curSprite.attributes) & 0b11);
+		int paletteID = ((curSprite.attributes >> 4) & 0b1);
 		//hardcoded for now, no sprites yet
 		FIFOPixel tempPixel = {};
-		tempPixel.colorID = colID;
-		tempPixel.hasPriority = priority;
-		tempPixel.paletteID = paletteID;
+		if (curSprite.x > 0 && curSprite.x < 168)
+		{
+			tempPixel.colorID = colID;
+			tempPixel.hasPriority = priority;
+			tempPixel.paletteID = paletteID;
+		}
 
 		m_spriteFIFO.push(tempPixel);
 	}
