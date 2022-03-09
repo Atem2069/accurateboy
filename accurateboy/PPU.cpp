@@ -196,32 +196,30 @@ void PPU::m_LCDTransfer()	//mode 3
 				m_scratchBuffer[pixelCoord] = 0xFFFFFFFF;
 			m_lcdXCoord++;
 		}
+	}
 
-		//if we run into window tiles, reset FIFO
-		if (m_getWindowEnabled() && LY >= WY && m_lcdXCoord >= ((int)WX - 7) && !m_fetchingWindowTiles)
-		{
-			m_fetcherStage = FetcherStage::FetchTileNumber;
-			m_modeCycleDiff = 0;
-			m_fetcherX = 0;
-			if (m_lcdXCoord == 1)
-				m_lcdXCoord = 0;
-			while (m_backgroundFIFO.size() > 0)
-				m_backgroundFIFO.pop();
-			m_fetchingWindowTiles = true;
-		}
+	//if we run into window tiles, reset FIFO
+	if (m_getWindowEnabled() && LY >= WY && m_lcdXCoord >= ((int)WX - 7) && !m_fetchingWindowTiles)
+	{
+		m_fetcherStage = FetcherStage::FetchTileNumber;
+		m_modeCycleDiff = 0;
+		m_fetcherX = 0;
+		while (m_backgroundFIFO.size() > 0)
+			m_backgroundFIFO.pop();
+		m_fetchingWindowTiles = true;
+	}
 
-		if (m_lcdXCoord == 160)	//enter hblank
-		{
-			m_lcdXCoord = 0;
+	if (m_lcdXCoord == 160)	//enter hblank
+	{
+		m_lcdXCoord = 0;
 
-			if (m_fetchingWindowTiles)
-				m_windowLineCounter++;
+		if (m_fetchingWindowTiles)
+			m_windowLineCounter++;
 
-			while (m_backgroundFIFO.size() > 0)
-				m_backgroundFIFO.pop();
-			m_modeCycleDiff = 0;
-			STAT &= 0b11111100;
-		}
+		while (m_backgroundFIFO.size() > 0)
+			m_backgroundFIFO.pop();
+		m_modeCycleDiff = 0;
+		STAT &= 0b11111100;
 	}
 }
 //todo:
