@@ -29,6 +29,12 @@ private:
 	std::array<uint8_t, 8192> m_WRAM;
 	std::array<uint8_t, 128> m_HRAM;
 
+	bool m_OAMDMARequested = false;
+	bool m_OAMDMAInProgress = false;
+	uint16_t m_OAMDMASrc = 0;
+	int m_debugOAMCycles = 0;
+	void m_transferDMAByte();
+
 	std::shared_ptr<Cartridge> m_cartridge;
 	std::shared_ptr<InterruptManager> m_interruptManager;
 	std::shared_ptr<PPU> m_ppu;

@@ -104,6 +104,10 @@ void Bus::write(uint16_t address, uint8_t value)
 			m_timer->write(address, value); break;
 		case REG_JOYPAD:
 			m_joypad->write(address, value); break;
+		case REG_DMA:
+			m_OAMDMARequested = true;
+			m_OAMDMASrc = (value << 8);
+			break;
 		case 0xFF01:
 			std::cout << value; break;
 		case 0xFF50:		//boot rom lockout
@@ -124,4 +128,29 @@ void Bus::tick()
 	m_ppu->step();
 	m_apu->step();
 	m_timer->step();
+
+	if (m_OAMDMAInProgress)
+		m_transferDMAByte();
+	if (m_OAMDMARequested)
+	{
+		m_debugOAMCycles++;
+		m_OAMDMARequested = false;
+		m_OAMDMAInProgress = true;
+	}
+}
+
+void Bus::m_transferDMAByte()
+{
+	m_debugOAMCycles++;
+	uint16_t offset = (m_OAMDMASrc & 0xFF);
+	if (offset == 0x9F)
+	{
+		if (m_debugOAMCycles != 161)
+			Logger::getInstance()->msg(LoggerSeverity::Warn, "Timing disrepancy - OAM DMA is meant to take 161 M-Cycles (644 T-Cycles), but instead took " + std::to_string(m_debugOAMCycles));
+		m_OAMDMAInProgress = false;
+		m_debugOAMCycles = 0;
+	}
+
+	write(0xFE00 + offset, read(m_OAMDMASrc));
+	m_OAMDMASrc++;
 }
