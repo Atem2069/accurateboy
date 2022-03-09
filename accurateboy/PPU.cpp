@@ -201,7 +201,7 @@ void PPU::m_LCDTransfer()	//mode 3
 	{
 		
 		FIFOPixel cur = m_backgroundFIFO.front();
-		m_backgroundFIFO.pop();
+		m_backgroundFIFO.pop_front();
 
 		if (m_lcdXCoord == 0 && m_discardCounter < (SCX % 8) && !m_fetchingWindowTiles)
 		{
@@ -219,7 +219,7 @@ void PPU::m_LCDTransfer()	//mode 3
 			if (!m_spriteFIFO.empty())
 			{
 				spritePixel = m_spriteFIFO.front();
-				m_spriteFIFO.pop();
+				m_spriteFIFO.pop_front();
 			}
 
 			uint8_t col = (BGP >> (cur.colorID * 2)) & 0b11;
@@ -286,7 +286,7 @@ void PPU::m_LCDTransfer()	//mode 3
 		m_modeCycleDiff = 0;
 		m_fetcherX = 0;
 		while (m_backgroundFIFO.size() > 0)
-			m_backgroundFIFO.pop();
+			m_backgroundFIFO.pop_front();
 		m_fetchingWindowTiles = true;
 	}
 
@@ -298,9 +298,9 @@ void PPU::m_LCDTransfer()	//mode 3
 			m_windowLineCounter++;
 
 		while (m_backgroundFIFO.size() > 0)
-			m_backgroundFIFO.pop();
+			m_backgroundFIFO.pop_front();
 		while (m_spriteFIFO.size() > 0)
-			m_spriteFIFO.pop();
+			m_spriteFIFO.pop_front();
 		m_modeCycleDiff = 0;
 		STAT &= 0b11111100;
 	}
@@ -395,7 +395,7 @@ void PPU::m_pushToFIFO()
 			tempPixel.hasPriority = true;
 			tempPixel.paletteID = 0;
 
-			m_backgroundFIFO.push(tempPixel);
+			m_backgroundFIFO.push_back(tempPixel);
 		}
 	}
 }
@@ -474,15 +474,19 @@ void PPU::m_spritePushToFIFO()
 
 	OAMEntry curSprite = m_spriteBuffer[m_consideredSpriteIndex];
 	bool xFlip = ((curSprite.attributes >> 5) & 0b1);
-
-	int loadedPixels = m_spriteFIFO.size();
+;
 	int xCutoff = 0;
 	if ((curSprite.x) < 8)			//todo: double check
 		xCutoff = 8 - (curSprite.x);
 
+	int loadedPixels = m_spriteFIFO.size();
+	//for (int i = 0; i < m_spriteFIFO.size(); i++)
+	//	if (m_spriteFIFO[i].colorID != 0)
+	//		loadedPixels++;
+
 	int finalOffset = std::max(loadedPixels, xCutoff);
 
-	for (int i = finalOffset; i < 8; i++)
+	for (int i = xCutoff; i < 8; i++)
 	{
 		uint8_t shiftOffset = 7 - i;
 		if (xFlip)
@@ -502,7 +506,13 @@ void PPU::m_spritePushToFIFO()
 			tempPixel.paletteID = paletteID;
 		}
 
-		m_spriteFIFO.push(tempPixel);
+		if (i < loadedPixels)
+		{
+			if (m_spriteFIFO[i].colorID == 0)
+				m_spriteFIFO[i] = tempPixel;
+		}
+		else
+			m_spriteFIFO.push_back(tempPixel);
 	}
 }
 

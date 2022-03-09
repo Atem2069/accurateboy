@@ -73,8 +73,8 @@ private:
 	bool m_getSpritesEnabled();
 	bool m_getBackgroundPriority();
 
-	std::queue<FIFOPixel> m_backgroundFIFO;
-	std::queue<FIFOPixel> m_spriteFIFO;
+	std::deque<FIFOPixel> m_backgroundFIFO;
+	std::deque<FIFOPixel> m_spriteFIFO;
 	FetcherStage m_fetcherStage;
 	int m_fetcherX = 0;
 	int m_lcdXCoord = 0;
