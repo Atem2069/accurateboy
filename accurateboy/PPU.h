@@ -73,6 +73,8 @@ private:
 	uint8_t m_tileDataLow = 0;
 	uint8_t m_tileDataHigh = 0;
 	bool m_fetcherBeginDelayed = false;
+	bool m_fetchingWindowTiles = false;
+	uint8_t m_windowLineCounter = 0;
 	int m_discardCounter = 0;
 
 	void m_fetchTileNumber();
