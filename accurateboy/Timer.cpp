@@ -21,6 +21,11 @@ void Timer::m_tickTCycle()
 	uint16_t m_lastDivider = m_divider;
 	m_divider++;
 
+	m_tickTIMA(m_lastDivider, m_divider);
+}
+
+void Timer::m_tickTIMA(uint16_t lastDiv, uint16_t newDiv)
+{
 	bool timerEnabled = (TAC >> 2) & 0b1;
 	uint8_t timerMode = (TAC & 0b11);
 	if (timerEnabled)
@@ -38,9 +43,9 @@ void Timer::m_tickTCycle()
 			m_shiftAmount = 7; break;
 		}
 
-		bool shouldTick = ((m_lastDivider >> m_shiftAmount) & 0b1) && (!((m_divider >> m_shiftAmount) & 0b1));	//falling edge (1 in last tick, 0 now)
+		bool shouldTick = ((lastDiv >> m_shiftAmount) & 0b1) && (!((newDiv >> m_shiftAmount) & 0b1));	//falling edge (1 in last tick, 0 now)
 
-		if(shouldTick)
+		if (shouldTick)
 		{
 			TIMA++;
 			if (TIMA == 0)
@@ -73,6 +78,7 @@ void Timer::write(uint16_t address, uint8_t value)
 	switch (address)
 	{
 	case REG_DIV:
+		m_tickTIMA(m_divider, 0);
 		m_divider = 0; break;
 	case REG_TIMA:
 		TIMA = value; break;

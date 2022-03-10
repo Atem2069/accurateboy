@@ -16,6 +16,7 @@ public:
 	void write(uint16_t address, uint8_t value);
 private:
 	void m_tickTCycle();
+	void m_tickTIMA(uint16_t lastDiv, uint16_t newDiv);
 
 	std::shared_ptr<InterruptManager> m_interruptManager;
 
