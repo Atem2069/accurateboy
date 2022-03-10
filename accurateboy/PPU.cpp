@@ -475,16 +475,11 @@ void PPU::m_spritePushToFIFO()
 	OAMEntry curSprite = m_spriteBuffer[m_consideredSpriteIndex];
 	bool xFlip = ((curSprite.attributes >> 5) & 0b1);
 ;
-	int xCutoff = 0;
-	if ((curSprite.x) < 8)			//todo: double check
-		xCutoff = 8 - (curSprite.x);
+	FIFOPixel empty = {};
+	while (m_spriteFIFO.size() < 8)	//ensure sprite fifo filled with empty pixels
+		m_spriteFIFO.push_back(empty);
 
-	int loadedPixels = m_spriteFIFO.size();
-	//for (int i = 0; i < m_spriteFIFO.size(); i++)
-	//	if (m_spriteFIFO[i].colorID != 0)
-	//		loadedPixels++;
-
-	int finalOffset = std::max(loadedPixels, xCutoff);
+	int xCutoff = (curSprite.x < 8) ? (8 - curSprite.x) : 0;
 
 	for (int i = xCutoff; i < 8; i++)
 	{
@@ -506,13 +501,8 @@ void PPU::m_spritePushToFIFO()
 			tempPixel.paletteID = paletteID;
 		}
 
-		if (i < loadedPixels)
-		{
-			if (m_spriteFIFO[i].colorID == 0)
-				m_spriteFIFO[i] = tempPixel;
-		}
-		else
-			m_spriteFIFO.push_back(tempPixel);
+		if (m_spriteFIFO[i-xCutoff].colorID == 0)
+			m_spriteFIFO[i-xCutoff] = tempPixel;
 	}
 }
 

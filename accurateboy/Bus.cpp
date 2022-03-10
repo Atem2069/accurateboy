@@ -5,6 +5,10 @@ Bus::Bus(std::vector<uint8_t> romData, std::shared_ptr<InterruptManager>& interr
 	uint8_t cartType = romData[0x0147];
 	if (cartType >= 0x01 && cartType <= 0x03)
 		m_cartridge = std::make_shared<MBC1>(romData);
+	else if (cartType >= 0x0F && cartType <= 0x13)
+		m_cartridge = std::make_shared<MBC3>(romData);
+	else if (cartType >= 0x19 && cartType <= 0x1E)
+		m_cartridge = std::make_shared<MBC5>(romData);
 	else
 		m_cartridge = std::make_shared<Cartridge>(romData);
 	m_interruptManager = interruptManager;

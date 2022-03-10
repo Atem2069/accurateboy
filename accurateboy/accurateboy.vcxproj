@@ -168,6 +168,8 @@
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MBC1.cpp" />
+    <ClCompile Include="MBC3.cpp" />
+    <ClCompile Include="MBC5.cpp" />
     <ClCompile Include="PPU.cpp" />
     <ClCompile Include="Timer.cpp" />
   </ItemGroup>
