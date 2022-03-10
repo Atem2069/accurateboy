@@ -88,7 +88,7 @@ uint8_t InterruptManager::read(uint16_t address)
 	case REG_IE:
 		return IE; break;
 	case REG_IFLAGS:
-		return IFLAGS; break;
+		return IFLAGS | 0b11100000; break;
 	}
 
 	Logger::getInstance()->msg(LoggerSeverity::Error, "Invalid interrupt IO register read");

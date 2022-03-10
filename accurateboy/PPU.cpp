@@ -518,7 +518,7 @@ uint8_t PPU::read(uint16_t address)
 	case REG_LCDC:
 		return LCDC; break;
 	case REG_STAT:
-		return STAT; break;
+		return STAT | 0b10000000; break;
 	case REG_SCX:
 		return SCX; break;
 	case REG_SCY:

@@ -69,7 +69,7 @@ uint8_t Timer::read(uint16_t address)
 	case REG_TMA:
 		return TMA; break;
 	case REG_TAC:
-		return TAC; break;
+		return TAC | 0b11111000; break;
 	}
 }
 
