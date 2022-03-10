@@ -32,7 +32,8 @@ private:
 	bool m_OAMDMARequested = false;
 	bool m_OAMDMAInProgress = false;
 	uint16_t m_OAMDMASrc = 0;
-	int m_debugOAMCycles = 0;
+	uint16_t m_provisionedDMASrc = 0;
+	int m_OAMDMAWaitCycles = 0;
 	uint8_t m_OAMDMALastByte = 0xFF;
 	void m_transferDMAByte();
 

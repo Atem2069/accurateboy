@@ -33,6 +33,8 @@ uint8_t Bus::read(uint16_t address)
 		return m_cartridge->read(address);
 	if ((address >= 0x8000 && address <= 0x9FFF) || (address >= 0xFE00 && address <= 0xFE9F))
 	{
+		if ((address >= 0xFE00 && address <= 0xFE9F) && m_OAMDMAInProgress)
+			return 0xFF;
 		return m_ppu->read(address);
 	}
 	if (address >= 0xC000 && address <= 0xFDFF)
@@ -79,6 +81,8 @@ void Bus::write(uint16_t address, uint8_t value)
 		m_cartridge->write(address, value);
 	if ((address >= 0x8000 && address <= 0x9FFF) || (address >= 0xFE00 && address <= 0xFE9F))
 	{
+		if ((address >= 0xFE00 && address <= 0xFE9F) && m_OAMDMAInProgress)
+			return;
 		m_ppu->write(address, value);
 	}
 	if (address >= 0xC000 && address <= 0xFDFF)
@@ -112,11 +116,8 @@ void Bus::write(uint16_t address, uint8_t value)
 			m_joypad->write(address, value); break;
 		case REG_DMA:
 			m_OAMDMALastByte = value;
-			if (!m_OAMDMAInProgress)
-			{
-				m_OAMDMARequested = true;
-				m_OAMDMASrc = (value << 8);
-			}
+			m_OAMDMARequested = true;
+			m_provisionedDMASrc = (value << 8);
 			break;
 		case 0xFF01:
 			std::cout << value; break;
@@ -143,23 +144,24 @@ void Bus::tick()
 		m_transferDMAByte();
 	if (m_OAMDMARequested)
 	{
-		m_debugOAMCycles++;
-		m_OAMDMARequested = false;
-		m_OAMDMAInProgress = true;
+		m_OAMDMAWaitCycles++;
+		if (m_OAMDMAWaitCycles==2)
+		{
+			m_OAMDMAWaitCycles = 0;
+			m_OAMDMARequested = false;
+			m_OAMDMAInProgress = true;
+			m_OAMDMASrc = m_provisionedDMASrc;
+		}
 	}
 }
 
 void Bus::m_transferDMAByte()
 {
-	m_debugOAMCycles++;
+	if (m_OAMDMAWaitCycles == 1)
+		m_OAMDMAInProgress = false;
 	uint16_t offset = (m_OAMDMASrc & 0xFF);
 	if (offset == 0x9F)
-	{
-		if (m_debugOAMCycles != 161)
-			Logger::getInstance()->msg(LoggerSeverity::Warn, "Timing disrepancy - OAM DMA is meant to take 161 M-Cycles (644 T-Cycles), but instead took " + std::to_string(m_debugOAMCycles));
 		m_OAMDMAInProgress = false;
-		m_debugOAMCycles = 0;
-	}
-	write(0xFE00 + offset, read(m_OAMDMASrc));
+	m_ppu->write(0xFE00 + offset, read(m_OAMDMASrc));
 	m_OAMDMASrc++;
 }
