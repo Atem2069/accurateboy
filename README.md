@@ -25,7 +25,7 @@ GBEmu rewrite with much higher accuracy, including M-Cycle CPU timing and T-Cycl
 ### OAM DMA
  - [x] basic
  - [x] reg_read
- - [ ] sources-GS (FAIL: FE00)
+ - [x] sources-GS
 
 ### PPU
  - [ ] fails basically every test lol. PPU has broken IRQ blocking and timing bugs
