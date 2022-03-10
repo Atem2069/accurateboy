@@ -33,6 +33,7 @@ private:
 	bool m_OAMDMAInProgress = false;
 	uint16_t m_OAMDMASrc = 0;
 	int m_debugOAMCycles = 0;
+	uint8_t m_OAMDMALastByte = 0xFF;
 	void m_transferDMAByte();
 
 	std::shared_ptr<Cartridge> m_cartridge;

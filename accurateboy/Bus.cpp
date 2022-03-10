@@ -65,6 +65,8 @@ uint8_t Bus::read(uint16_t address)
 			return m_timer->read(address); break;
 		case REG_JOYPAD:
 			return m_joypad->read(address); break;
+		case REG_DMA:
+			return m_OAMDMALastByte; break;
 		}
 	}
 
@@ -109,8 +111,12 @@ void Bus::write(uint16_t address, uint8_t value)
 		case REG_JOYPAD:
 			m_joypad->write(address, value); break;
 		case REG_DMA:
-			m_OAMDMARequested = true;
-			m_OAMDMASrc = (value << 8);
+			m_OAMDMALastByte = value;
+			if (!m_OAMDMAInProgress)
+			{
+				m_OAMDMARequested = true;
+				m_OAMDMASrc = (value << 8);
+			}
 			break;
 		case 0xFF01:
 			std::cout << value; break;
@@ -154,7 +160,6 @@ void Bus::m_transferDMAByte()
 		m_OAMDMAInProgress = false;
 		m_debugOAMCycles = 0;
 	}
-
 	write(0xFE00 + offset, read(m_OAMDMASrc));
 	m_OAMDMASrc++;
 }
