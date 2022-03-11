@@ -1406,6 +1406,7 @@ void CPU::_popToPairRegister(Register& reg)
 //some misc instructions
 void CPU::_disableInterrupts()
 {
+	m_EIRequested = false;
 	m_interruptManager->disableInterrupts();
 }
 
