@@ -74,6 +74,9 @@ void PPU::m_hblank()	//mode 0
 	{
 		m_modeCycleDiff = 0;
 		m_totalLineCycles = 0;
+		//reset oam list
+		for (int i = 0; i < 10; i++)
+			m_spriteBuffer[i] = {};
 		LY++;
 		if (LY == 144)
 		{
@@ -501,7 +504,7 @@ void PPU::m_spritePushToFIFO()
 			tempPixel.paletteID = paletteID;
 		}
 
-		if (m_spriteFIFO[i-xCutoff].colorID == 0)
+		if (m_spriteFIFO[i-xCutoff].colorID == 0 || !m_spriteFIFO[i-xCutoff].hasPriority && tempPixel.hasPriority)
 			m_spriteFIFO[i-xCutoff] = tempPixel;
 	}
 }
