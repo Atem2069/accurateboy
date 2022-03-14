@@ -212,10 +212,6 @@ void PPU::m_LCDTransfer()	//mode 3
 		}
 		else if((m_lcdXCoord==0 && m_discardCounter == (SCX % 8)) || m_lcdXCoord>0 || m_fetchingWindowTiles)
 		{
-			/*m_discardCounter = 0;
-			uint8_t col = (BGP >> (cur.colorID * 2)) & 0b11;
-			int pixelCoord = (LY * 160) + m_lcdXCoord;
-			uint32_t finalCol = 0;*/
 			m_discardCounter = 0;
 
 			FIFOPixel spritePixel = {};
@@ -253,33 +249,33 @@ void PPU::m_LCDTransfer()	//mode 3
 			else
 				m_scratchBuffer[pixelCoord] = 0xFFFFFFFF;
 			m_lcdXCoord++;
+		}
 
-			if (m_getSpritesEnabled())
+	}
+
+	if (m_getSpritesEnabled())
+	{
+		for (int i = 0; i < 10; i++)
+		{
+			if ((m_lcdXCoord + 8) >= m_spriteBuffer[i].x && ((m_lcdXCoord + 8) - m_spriteBuffer[i].x) < 8 && m_spriteBuffer[i].x != 0 && m_spriteBuffer[i].x < 168 && !m_spriteBuffer[i].rendered)	//jesus.
 			{
-				for (int i = 0; i < 10; i++)
+				//check if sprite already rendered at this x
+				bool skip = false;
+				for (int j = 0; j < i; j++)
+					if (m_spriteBuffer[j].x == m_spriteBuffer[i].x)
+						skip = true;
+				if (!skip)
 				{
-					if ((m_lcdXCoord + 8) >= m_spriteBuffer[i].x && ((m_lcdXCoord + 8) - m_spriteBuffer[i].x) < 8 && m_spriteBuffer[i].x != 0 && m_spriteBuffer[i].x < 168 && !m_spriteBuffer[i].rendered)	//jesus.
-					{
-						//check if sprite already rendered at this x
-						bool skip = false;
-						for (int j = 0; j < i; j++)
-							if (m_spriteBuffer[j].x == m_spriteBuffer[i].x)
-								skip = true;
-						if (!skip)
-						{
-							m_spriteBuffer[i].rendered = true;
-							m_consideredSpriteIndex = i;
-							m_modeCycleDiff = 0;
-							if (m_fetcherStage != FetcherStage::FetchTileNumber)	//fetcher might have already advanced if it's in another step, so set it back to ensure it gets rendered again
-								m_fetcherX--;
-							m_fetcherStage = FetcherStage::FetchTileNumber;
-							m_spriteFetchInProgress = true;
-						}
-					}
+					m_spriteBuffer[i].rendered = true;
+					m_consideredSpriteIndex = i;
+					m_modeCycleDiff = 1;
+					if (m_fetcherStage != FetcherStage::FetchTileNumber)	//fetcher might have already advanced if it's in another step, so set it back to ensure it gets rendered again
+						m_fetcherX--;
+					m_fetcherStage = FetcherStage::FetchTileNumber;
+					m_spriteFetchInProgress = true;
 				}
 			}
 		}
-
 	}
 
 	//if we run into window tiles, reset FIFO
@@ -295,6 +291,8 @@ void PPU::m_LCDTransfer()	//mode 3
 
 	if (m_lcdXCoord == 160)	//enter hblank
 	{
+		//if ((m_totalLineCycles-80) < 172 || (m_totalLineCycles-80) > 289)
+		//	std::cout << m_totalLineCycles-80 << " " << (int)LY << '\n';
 		m_lcdXCoord = 0;
 
 		if (m_fetchingWindowTiles)
@@ -471,7 +469,7 @@ void PPU::m_spriteFetchTileDataHigh()
 
 void PPU::m_spritePushToFIFO()
 {
-	m_modeCycleDiff = 0;
+	m_modeCycleDiff = 1;
 	m_fetcherStage = FetcherStage::FetchTileNumber;
 	m_spriteFetchInProgress = false;
 
