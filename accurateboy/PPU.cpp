@@ -291,8 +291,8 @@ void PPU::m_LCDTransfer()	//mode 3
 
 	if (m_lcdXCoord == 160)	//enter hblank
 	{
-		//if ((m_totalLineCycles-80) < 172 || (m_totalLineCycles-80) > 289)
-		//	std::cout << m_totalLineCycles-80 << " " << (int)LY << '\n';
+		if ((m_totalLineCycles-80) < 172 || (m_totalLineCycles-80) > 289)
+			std::cout << m_totalLineCycles-80 << " " << (int)LY << '\n';
 		m_lcdXCoord = 0;
 
 		if (m_fetchingWindowTiles)
@@ -403,24 +403,21 @@ void PPU::m_pushToFIFO()
 
 void PPU::m_spriteFetchTileNumber()
 {
-	if (m_modeCycleDiff == 2)
-	{
-		m_modeCycleDiff = 0;
-		m_fetcherStage = FetcherStage::FetchTileDataLow;
+	m_modeCycleDiff = 0;
+	m_fetcherStage = FetcherStage::FetchTileDataLow;
 
-		OAMEntry curSprite = m_spriteBuffer[m_consideredSpriteIndex];
-		bool yFlip = ((curSprite.attributes >> 6) & 0b1);
-		m_tileNumber = curSprite.tileNumber;
-		if (m_getSpriteSize())
-		{
-			uint16_t diff = ((LY + 16) - curSprite.y);
-			if (yFlip)
-				diff = 15 - diff;
-			if (diff >= 8)
-				m_tileNumber |= 0x01;
-			else
-				m_tileNumber &= 0xFE;
-		}
+	OAMEntry curSprite = m_spriteBuffer[m_consideredSpriteIndex];
+	bool yFlip = ((curSprite.attributes >> 6) & 0b1);
+	m_tileNumber = curSprite.tileNumber;
+	if (m_getSpriteSize())
+	{
+		uint16_t diff = ((LY + 16) - curSprite.y);
+		if (yFlip)
+			diff = 15 - diff;
+		if (diff >= 8)
+			m_tileNumber |= 0x01;
+		else
+			m_tileNumber &= 0xFE;
 	}
 }
 
