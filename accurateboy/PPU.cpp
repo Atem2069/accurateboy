@@ -19,20 +19,10 @@ void PPU::step()
 		m_tickTCycle();
 }
 
-void PPU::m_tickTCycle()
+void PPU::m_checkSTATInterrupt()
 {
-	if (!m_getLCDEnabled())
-	{
-		STAT &= 0b11111100;
-		m_totalFrameCycles = 0;
-		m_totalLineCycles = 0;
-		m_modeCycleDiff = 0;
-		LY = 0;
-		return;
-	}
 	uint8_t curPPUMode = STAT & 0b11;
 
-	//todo here: STAT interrupts
 	bool lycEnabled = (STAT >> 6) & 0b1;
 	bool oamEnabled = (STAT >> 5) & 0b1;
 	bool vblankEnabled = (STAT >> 4) & 0b1;
@@ -51,6 +41,22 @@ void PPU::m_tickTCycle()
 	if (statCondHigh && !m_lastStatState)
 		m_interruptManager->requestInterrupt(InterruptType::STAT);
 	m_lastStatState = statCondHigh;
+}
+
+void PPU::m_tickTCycle()
+{
+	if (!m_getLCDEnabled())
+	{
+		STAT &= 0b11111100;
+		m_totalFrameCycles = 0;
+		m_totalLineCycles = 0;
+		m_modeCycleDiff = 0;
+		LY = 0;
+		return;
+	}
+	uint8_t curPPUMode = STAT & 0b11;
+
+	m_checkSTATInterrupt();
 
 	switch (curPPUMode)
 	{
@@ -93,6 +99,7 @@ void PPU::m_hblank()	//mode 0
 			STAT &= 0b11111100;
 			STAT |= 0b00000010;	//enter mode 2 again
 		}
+		m_checkSTATInterrupt();
 	}
 }
 
@@ -117,6 +124,7 @@ void PPU::m_vblank()	//mode 1
 			LY = 0;				//go back to beginning
 			STAT &= 0b11111100;
 			STAT |= 0b00000010;	//enter mode 2
+			m_checkSTATInterrupt();
 		}
 	}
 }
@@ -153,6 +161,7 @@ void PPU::m_OAMSearch()	//mode 2
 			m_fetcherStage = FetcherStage::FetchTileNumber;
 			m_fetcherBeginDelayed = false;
 			m_fetchingWindowTiles = false;
+			m_checkSTATInterrupt();
 		}
 	}
 }
@@ -304,6 +313,7 @@ void PPU::m_LCDTransfer()	//mode 3
 			m_spriteFIFO.pop_front();
 		m_modeCycleDiff = 0;
 		STAT &= 0b11111100;
+		m_checkSTATInterrupt();
 	}
 }
 //todo:
@@ -553,7 +563,7 @@ void PPU::write(uint16_t address, uint8_t value)
 	case REG_LCDC:
 		LCDC=value; break;
 	case REG_STAT:
-		STAT=value; break;
+		STAT &= 0b00000111; STAT |= (value & 0b11111000); break;
 	case REG_SCX:
 		SCX=value; break;
 	case REG_SCY:
@@ -562,8 +572,6 @@ void PPU::write(uint16_t address, uint8_t value)
 		WY=value; break;
 	case REG_WX:
 		WX=value; break;
-	case REG_LY:
-		LY=value; break;
 	case REG_LYC:
 		LYC=value; break;
 	case 0xFF47:

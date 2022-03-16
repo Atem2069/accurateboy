@@ -44,6 +44,7 @@ public:
 	void write(uint16_t address, uint8_t value);
 	uint32_t* getDisplayBuffer();
 private:
+	void m_checkSTATInterrupt();
 	void m_tickTCycle();
 	void m_hblank();
 	void m_vblank();
