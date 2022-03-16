@@ -73,6 +73,7 @@ void PPU::m_tickTCycle()
 
 void PPU::m_hblank()	//mode 0
 {
+	m_VRAMAccessBlocked = false; m_OAMAccessBlocked = false;
 	m_modeCycleDiff++;
 	m_totalLineCycles++;
 	m_totalFrameCycles++;
@@ -105,6 +106,7 @@ void PPU::m_hblank()	//mode 0
 
 void PPU::m_vblank()	//mode 1
 {
+	m_VRAMAccessBlocked = false; m_OAMAccessBlocked = false;
 	m_modeCycleDiff++;
 	m_totalFrameCycles++;
 
@@ -131,6 +133,7 @@ void PPU::m_vblank()	//mode 1
 
 void PPU::m_OAMSearch()	//mode 2
 {
+	m_VRAMAccessBlocked = false; m_OAMAccessBlocked = true;
 	m_modeCycleDiff++;
 	m_totalLineCycles++;
 	m_totalFrameCycles++;
@@ -168,6 +171,7 @@ void PPU::m_OAMSearch()	//mode 2
 
 void PPU::m_LCDTransfer()	//mode 3
 {
+	m_VRAMAccessBlocked = true; m_OAMAccessBlocked = true;
 	m_modeCycleDiff++;
 	m_totalLineCycles++;
 	m_totalFrameCycles++;
@@ -516,9 +520,9 @@ void PPU::m_spritePushToFIFO()
 
 uint8_t PPU::read(uint16_t address)
 {
-	if (address >= 0x8000 && address <= 0x9FFF)
+	if (address >= 0x8000 && address <= 0x9FFF && !m_VRAMAccessBlocked)
 		return m_VRAM[address - 0x8000];
-	if (address >= 0xFE00 && address <= 0xFE9F)
+	if (address >= 0xFE00 && address <= 0xFE9F && !m_OAMAccessBlocked)
 		return m_OAM[address - 0xFE00];
 
 	switch (address)
@@ -547,15 +551,14 @@ uint8_t PPU::read(uint16_t address)
 		return OBP1; break;
 	}
 
-	Logger::getInstance()->msg(LoggerSeverity::Error, "Invalid PPU read");
 	return 0xFF;
 }
 
 void PPU::write(uint16_t address, uint8_t value)
 {
-	if (address >= 0x8000 && address <= 0x9FFF)
+	if (address >= 0x8000 && address <= 0x9FFF && !m_VRAMAccessBlocked)
 		m_VRAM[address - 0x8000] = value;
-	if (address >= 0xFE00 && address <= 0xFE9F)
+	if (address >= 0xFE00 && address <= 0xFE9F && !m_OAMAccessBlocked)
 		m_OAM[address - 0xFE00] = value;
 
 	switch (address)
