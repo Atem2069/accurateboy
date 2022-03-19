@@ -263,35 +263,28 @@ void PPU::m_LCDTransfer()	//mode 3
 			else
 				m_scratchBuffer[pixelCoord] = 0xFFFFFFFF;
 			m_lcdXCoord++;
-
-			if (m_getSpritesEnabled() && !m_spriteFetchInProgress)
-			{
-				for (int i = 0; i < 10; i++)
-				{
-					int xDiff = m_lcdXCoord - (m_spriteBuffer[i].x - 8);
-					if(xDiff >= 0 && xDiff < 8 && m_spriteBuffer[i].x >= 8 && !m_spriteBuffer[i].rendered)
-					{
-						//check if sprite already rendered at this x
-						bool skip = false;
-						for (int j = 0; j < i; j++)
-							if (m_spriteBuffer[j].x == m_spriteBuffer[i].x)
-								skip = true;
-						if (!skip)
-						{
-							//m_spriteBuffer[i].rendered = true;
-							m_consideredSpriteIndex = i;
-							m_modeCycleDiff = 1;
-							if (m_fetcherStage != FetcherStage::FetchTileNumber)	//fetcher might have already advanced if it's in another step, so set it back to ensure it gets rendered again
-								m_fetcherX--;
-							m_fetcherStage = FetcherStage::FetchTileNumber;
-							m_spriteFetchInProgress = true;
-							i = 100;
-						}
-					}
-				}
-			}
 		}
 
+	}
+
+	if (m_getSpritesEnabled() && !m_spriteFetchInProgress)
+	{
+		for (int i = 0; i < 10; i++)
+		{
+			int xDiff = m_lcdXCoord - (m_spriteBuffer[i].x - 8);
+			if (xDiff >= 0 && xDiff < 8 && m_spriteBuffer[i].x >= 0 && !m_spriteBuffer[i].rendered)
+			{
+				//m_spriteBuffer[i].rendered = true;
+				m_consideredSpriteIndex = i;
+				m_modeCycleDiff = 1;
+				if (m_fetcherStage != FetcherStage::FetchTileNumber)	//fetcher might have already advanced if it's in another step, so set it back to ensure it gets rendered again
+					m_fetcherX--;
+				m_fetcherStage = FetcherStage::FetchTileNumber;
+				m_spriteFetchInProgress = true;
+				i = 100;
+
+			}
+		}
 	}
 
 	//if we run into window tiles, reset FIFO
@@ -489,6 +482,13 @@ void PPU::m_spritePushToFIFO()
 
 	OAMEntry curSprite = m_spriteBuffer[m_consideredSpriteIndex];
 	bool xFlip = ((curSprite.attributes >> 5) & 0b1);
+	bool oamPriority = true;
+	for (int j = 0; j < m_consideredSpriteIndex; j++)
+	{
+		if (m_spriteBuffer[j].x == curSprite.x)
+			oamPriority = false;				//doesn't have priority
+	}
+
 ;
 	FIFOPixel empty = {};
 	while (m_spriteFIFO.size() < 8)	//ensure sprite fifo filled with empty pixels
@@ -516,7 +516,7 @@ void PPU::m_spritePushToFIFO()
 			tempPixel.paletteID = paletteID;
 		}
 
-		if (m_spriteFIFO[i-xCutoff].colorID == 0 || (!m_spriteFIFO[i-xCutoff].hasPriority && tempPixel.hasPriority))
+		if ((m_spriteFIFO[i-xCutoff].colorID == 0 || (!m_spriteFIFO[i-xCutoff].hasPriority && tempPixel.hasPriority && oamPriority)))
 			m_spriteFIFO[i-xCutoff] = tempPixel;
 	}
 
