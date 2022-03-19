@@ -147,14 +147,15 @@ void PPU::m_OAMSearch()	//mode 2
 		tempOAMEntry.attributes = m_OAM[(m_spritesChecked * 4) + 3];
 
 		//TODO: 8x16 sprites
-		int scanlineDiff = (LY+16) - tempOAMEntry.y;
+		int scanlineDiff = LY - (tempOAMEntry.y - 16);
 		bool inSpriteBounds = (scanlineDiff < 16 && m_getSpriteSize()) || (scanlineDiff < 8 && !m_getSpriteSize());
-		if (LY+16 >= tempOAMEntry.y && inSpriteBounds && tempOAMEntry.y && tempOAMEntry.y < 160 && m_spriteBufferIndex < 10)
+		if (LY >= (tempOAMEntry.y - 16) && inSpriteBounds && (tempOAMEntry.y >= 0) && (tempOAMEntry.y <= 160))
 			m_spriteBuffer[m_spriteBufferIndex++] = tempOAMEntry;
 
 		m_spritesChecked++;
 		if (m_spritesChecked == 40)
 		{
+			m_modeCycleDiff = 0;
 			m_spritesChecked = 0;
 			m_spriteBufferIndex = 0;
 			STAT &= 0b11111100;
@@ -262,33 +263,35 @@ void PPU::m_LCDTransfer()	//mode 3
 			else
 				m_scratchBuffer[pixelCoord] = 0xFFFFFFFF;
 			m_lcdXCoord++;
-		}
 
-	}
-
-	if (m_getSpritesEnabled())
-	{
-		for (int i = 0; i < 10; i++)
-		{
-			if ((m_lcdXCoord + 8) >= m_spriteBuffer[i].x && ((m_lcdXCoord + 8) - m_spriteBuffer[i].x) < 8 && m_spriteBuffer[i].x != 0 && m_spriteBuffer[i].x < 168 && !m_spriteBuffer[i].rendered)	//jesus.
+			if (m_getSpritesEnabled() && !m_spriteFetchInProgress)
 			{
-				//check if sprite already rendered at this x
-				bool skip = false;
-				for (int j = 0; j < i; j++)
-					if (m_spriteBuffer[j].x == m_spriteBuffer[i].x)
-						skip = true;
-				if (!skip)
+				for (int i = 0; i < 10; i++)
 				{
-					m_spriteBuffer[i].rendered = true;
-					m_consideredSpriteIndex = i;
-					m_modeCycleDiff = 1;
-					if (m_fetcherStage != FetcherStage::FetchTileNumber)	//fetcher might have already advanced if it's in another step, so set it back to ensure it gets rendered again
-						m_fetcherX--;
-					m_fetcherStage = FetcherStage::FetchTileNumber;
-					m_spriteFetchInProgress = true;
+					int xDiff = m_lcdXCoord - (m_spriteBuffer[i].x - 8);
+					if(xDiff >= 0 && xDiff < 8 && m_spriteBuffer[i].x >= 8 && !m_spriteBuffer[i].rendered)
+					{
+						//check if sprite already rendered at this x
+						bool skip = false;
+						for (int j = 0; j < i; j++)
+							if (m_spriteBuffer[j].x == m_spriteBuffer[i].x)
+								skip = true;
+						if (!skip)
+						{
+							//m_spriteBuffer[i].rendered = true;
+							m_consideredSpriteIndex = i;
+							m_modeCycleDiff = 1;
+							if (m_fetcherStage != FetcherStage::FetchTileNumber)	//fetcher might have already advanced if it's in another step, so set it back to ensure it gets rendered again
+								m_fetcherX--;
+							m_fetcherStage = FetcherStage::FetchTileNumber;
+							m_spriteFetchInProgress = true;
+							i = 100;
+						}
+					}
 				}
 			}
 		}
+
 	}
 
 	//if we run into window tiles, reset FIFO
@@ -513,9 +516,11 @@ void PPU::m_spritePushToFIFO()
 			tempPixel.paletteID = paletteID;
 		}
 
-		if (m_spriteFIFO[i-xCutoff].colorID == 0 || !m_spriteFIFO[i-xCutoff].hasPriority && tempPixel.hasPriority)
+		if (m_spriteFIFO[i-xCutoff].colorID == 0 || (!m_spriteFIFO[i-xCutoff].hasPriority && tempPixel.hasPriority))
 			m_spriteFIFO[i-xCutoff] = tempPixel;
 	}
+
+	m_spriteBuffer[m_consideredSpriteIndex].rendered = true;
 }
 
 uint8_t PPU::read(uint16_t address)
