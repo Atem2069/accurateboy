@@ -66,7 +66,7 @@ GBEmu rewrite with much higher accuracy, including M-Cycle CPU timing and T-Cycl
 | tim10_div_trigger | :heavy_check_mark: |
 |  tim11 | :heavy_check_mark: |
 | tim11_div_trigger | :heavy_check_mark: |
-| tima_reload | :x: |
+| tima_reload | :heavy_check_mark: |
 | tima_write_reloading | :x: |
 | tma_write_reloading | :x: |
 
