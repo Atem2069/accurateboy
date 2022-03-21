@@ -149,7 +149,7 @@ void PPU::m_OAMSearch()	//mode 2
 		//TODO: 8x16 sprites
 		int scanlineDiff = LY - (tempOAMEntry.y - 16);
 		bool inSpriteBounds = (scanlineDiff < 16 && m_getSpriteSize()) || (scanlineDiff < 8 && !m_getSpriteSize());
-		if (LY >= (tempOAMEntry.y - 16) && inSpriteBounds && (tempOAMEntry.y >= 0) && (tempOAMEntry.y <= 160))
+		if (LY >= (tempOAMEntry.y - 16) && inSpriteBounds && (tempOAMEntry.y >= 0) && (tempOAMEntry.y <= 160) && m_spriteBufferIndex<10)
 			m_spriteBuffer[m_spriteBufferIndex++] = tempOAMEntry;
 
 		m_spritesChecked++;
