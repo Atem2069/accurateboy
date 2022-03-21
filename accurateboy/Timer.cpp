@@ -18,6 +18,18 @@ void Timer::step()
 
 void Timer::m_tickTCycle()
 {
+	if (m_timerReloading)
+	{
+		m_timerReloadCycles++;
+		if (m_timerReloadCycles == 4)
+		{
+			m_timerReloadCycles = 0;
+			m_timerReloading = false;
+			TIMA = TMA;
+			m_interruptManager->requestInterrupt(InterruptType::Timer);
+		}
+	}
+
 	uint16_t m_lastDivider = m_divider;
 	m_divider++;
 
@@ -50,8 +62,9 @@ void Timer::m_tickTIMA(uint16_t lastDiv, uint16_t newDiv)
 			TIMA++;
 			if (TIMA == 0)
 			{
-				TIMA = TMA;
-				m_interruptManager->requestInterrupt(InterruptType::Timer);
+				m_timerReloadCycles = 0;
+				m_timerWeirdCycle = true;
+				m_timerReloading = true;
 			}
 		}
 
@@ -60,6 +73,8 @@ void Timer::m_tickTIMA(uint16_t lastDiv, uint16_t newDiv)
 
 uint8_t Timer::read(uint16_t address)
 {
+	if (m_timerWeirdCycle)
+		m_timerWeirdCycle = false;
 	switch (address)
 	{
 	case REG_DIV:
@@ -81,10 +96,20 @@ void Timer::write(uint16_t address, uint8_t value)
 		m_tickTIMA(m_divider, 0);
 		m_divider = 0; break;
 	case REG_TIMA:
-		TIMA = value; break;
+		if (!m_timerReloading || m_timerWeirdCycle)
+		{
+			TIMA = value;
+			m_timerReloading = false;
+			m_timerReloadCycles = 0;
+		}
+		break;
 	case REG_TMA:
-		TMA = value; break;
+		if(!m_timerReloading)
+			TMA = value;
+		break;
 	case REG_TAC:
 		TAC = value; break;
 	}
+	if (m_timerWeirdCycle)
+		m_timerWeirdCycle = false;
 }

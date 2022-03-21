@@ -24,5 +24,9 @@ private:
 	uint8_t TMA = 0;
 	uint8_t TAC = 0;
 
+	bool m_timerWeirdCycle = false;
+	bool m_timerReloading = false;
+	int m_timerReloadCycles = 0;
+
 	uint16_t m_divider = 0;
 };
