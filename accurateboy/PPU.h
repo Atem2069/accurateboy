@@ -42,6 +42,7 @@ public:
 
 	uint8_t read(uint16_t address);
 	void write(uint16_t address, uint8_t value);
+	void DMAForceWrite(uint16_t address, uint8_t value);
 	uint32_t* getDisplayBuffer();
 private:
 	void m_checkSTATInterrupt();

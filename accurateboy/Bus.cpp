@@ -165,6 +165,6 @@ void Bus::m_transferDMAByte()
 	uint16_t readAddr = m_OAMDMASrc;
 	if (readAddr >= 0xFE00)
 		readAddr -= 0x2000;
-	m_ppu->write(0xFE00 + offset, read(readAddr));
+	m_ppu->DMAForceWrite(0xFE00 + offset, read(readAddr));
 	m_OAMDMASrc++;
 }

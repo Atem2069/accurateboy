@@ -525,9 +525,9 @@ void PPU::m_spritePushToFIFO()
 
 uint8_t PPU::read(uint16_t address)
 {
-	if (address >= 0x8000 && address <= 0x9FFF)
+	if (address >= 0x8000 && address <= 0x9FFF && !m_VRAMAccessBlocked)
 		return m_VRAM[address - 0x8000];
-	if (address >= 0xFE00 && address <= 0xFE9F)
+	if (address >= 0xFE00 && address <= 0xFE9F && !m_OAMAccessBlocked)
 		return m_OAM[address - 0xFE00];
 
 	switch (address)
@@ -561,9 +561,9 @@ uint8_t PPU::read(uint16_t address)
 
 void PPU::write(uint16_t address, uint8_t value)
 {
-	if (address >= 0x8000 && address <= 0x9FFF)
+	if (address >= 0x8000 && address <= 0x9FFF && !m_VRAMAccessBlocked)
 		m_VRAM[address - 0x8000] = value;
-	if (address >= 0xFE00 && address <= 0xFE9F)
+	if (address >= 0xFE00 && address <= 0xFE9F && !m_OAMAccessBlocked)
 		m_OAM[address - 0xFE00] = value;
 
 	switch (address)
@@ -589,6 +589,14 @@ void PPU::write(uint16_t address, uint8_t value)
 	case 0xFF49:
 		OBP1=value; break;
 	}
+}
+
+void PPU::DMAForceWrite(uint16_t address, uint8_t value)
+{
+	if (address >= 0xFE00 && address <= 0xFE9F)
+		m_OAM[address - 0xFE00] = value;
+	else
+		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Invalid DMA write to address {:#x}", address));
 }
 
 bool PPU::m_getLCDEnabled()

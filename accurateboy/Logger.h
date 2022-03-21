@@ -5,6 +5,7 @@
 #include<queue>
 #include<fstream>
 #include<source_location>
+#include<format>
 enum class LoggerSeverity
 {
 	Error,
