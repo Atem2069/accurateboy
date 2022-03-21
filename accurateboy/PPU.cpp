@@ -274,7 +274,7 @@ void PPU::m_LCDTransfer()	//mode 3
 			int xDiff = m_lcdXCoord - (m_spriteBuffer[i].x - 8);
 			if (xDiff >= 0 && xDiff < 8 && m_spriteBuffer[i].x >= 0 && !m_spriteBuffer[i].rendered)
 			{
-				//m_spriteBuffer[i].rendered = true;
+				m_spriteBuffer[i].rendered = true;
 				m_consideredSpriteIndex = i;
 				m_modeCycleDiff = 1;
 				if (m_fetcherStage != FetcherStage::FetchTileNumber)	//fetcher might have already advanced if it's in another step, so set it back to ensure it gets rendered again
@@ -482,11 +482,11 @@ void PPU::m_spritePushToFIFO()
 
 	OAMEntry curSprite = m_spriteBuffer[m_consideredSpriteIndex];
 	bool xFlip = ((curSprite.attributes >> 5) & 0b1);
-	bool oamPriority = true;
+	bool oamPriority = false;
 	for (int j = 0; j < m_consideredSpriteIndex; j++)
 	{
-		if (m_spriteBuffer[j].x == curSprite.x)
-			oamPriority = false;				//doesn't have priority
+		//if (m_spriteBuffer[j].x == curSprite.x)
+		//	oamPriority = false;				//doesn't have priority
 	}
 
 ;
@@ -525,9 +525,9 @@ void PPU::m_spritePushToFIFO()
 
 uint8_t PPU::read(uint16_t address)
 {
-	if (address >= 0x8000 && address <= 0x9FFF && !m_VRAMAccessBlocked)
+	if (address >= 0x8000 && address <= 0x9FFF)
 		return m_VRAM[address - 0x8000];
-	if (address >= 0xFE00 && address <= 0xFE9F && !m_OAMAccessBlocked)
+	if (address >= 0xFE00 && address <= 0xFE9F)
 		return m_OAM[address - 0xFE00];
 
 	switch (address)
@@ -561,9 +561,9 @@ uint8_t PPU::read(uint16_t address)
 
 void PPU::write(uint16_t address, uint8_t value)
 {
-	if (address >= 0x8000 && address <= 0x9FFF && !m_VRAMAccessBlocked)
+	if (address >= 0x8000 && address <= 0x9FFF)
 		m_VRAM[address - 0x8000] = value;
-	if (address >= 0xFE00 && address <= 0xFE9F && !m_OAMAccessBlocked)
+	if (address >= 0xFE00 && address <= 0xFE9F)
 		m_OAM[address - 0xFE00] = value;
 
 	switch (address)
