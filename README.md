@@ -42,7 +42,7 @@ GBEmu rewrite with much higher accuracy, including M-Cycle CPU timing and T-Cycl
 | intr_2_mode0_timing | :heavy_check_mark: |
 | intr_2_mode0_timing_sprites | :x: |
 | intr_2_mode3_timing | :heavy_check_mark: |
-| intr_2_oam_ok_timing | :x: |
+| intr_2_oam_ok_timing | :heavy_check_mark: |
 | lcdon_timing-GS | :x: |
 | lcdon_write_timing-GS | :x: |
 | stat_irq_blocking | :heavy_check_mark: |
