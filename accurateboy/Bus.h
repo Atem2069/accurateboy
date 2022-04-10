@@ -29,12 +29,17 @@ private:
 	std::array<uint8_t, 8192> m_WRAM;
 	std::array<uint8_t, 128> m_HRAM;
 
+	uint8_t internalRead(uint16_t address);
+	void internalWrite(uint16_t address, uint8_t value);
+
+
 	bool m_OAMDMARequested = false;
 	bool m_OAMDMAInProgress = false;
 	uint16_t m_OAMDMASrc = 0;
 	uint16_t m_provisionedDMASrc = 0;
 	int m_OAMDMAWaitCycles = 0;
-	uint8_t m_OAMDMALastByte = 0xFF;
+	uint8_t m_OAMDMALastByte = 0xFF;	//last value written to dma register
+	uint8_t m_OAMDMAConflictByte = 0;	//last value transferred in dma
 	void m_transferDMAByte();
 
 	std::shared_ptr<Cartridge> m_cartridge;

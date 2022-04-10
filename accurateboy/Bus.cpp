@@ -26,6 +26,29 @@ Bus::~Bus()
 
 uint8_t Bus::read(uint16_t address)
 {
+	//oam dma conflict. todo: check which buses are actually affected
+	if (address < 0xFF00 && m_OAMDMAInProgress)
+	{
+		Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("OAM DMA bus conflict: addr={:#x} dma src={:#x} dma dst={:#x} dma val={:#x}", address,m_OAMDMASrc,0xFE00+(m_OAMDMASrc&0xFF),m_OAMDMAConflictByte));
+		return m_OAMDMAConflictByte;
+	}
+	return internalRead(address);
+}
+
+void Bus::write(uint16_t address, uint8_t value)
+{
+	//same as in read, todo: ensure conflict only occurs on affected buses
+	if (address < 0xFF00 && m_OAMDMAInProgress)
+	{
+		Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("OAM DMA bus conflict: addr={:#x} dma src={:#x} dma dst={:#x} dma val={:#x}", address, m_OAMDMASrc, 0xFE00 + (m_OAMDMASrc & 0xFF), m_OAMDMAConflictByte));
+		return;
+	}
+
+	internalWrite(address, value);
+}
+
+uint8_t Bus::internalRead(uint16_t address)
+{
 	if (m_inBootRom && address <= 0xFF)
 		return m_bootRom[address];
 
@@ -75,7 +98,7 @@ uint8_t Bus::read(uint16_t address)
 	return 0xFF;
 }
 
-void Bus::write(uint16_t address, uint8_t value)
+void Bus::internalWrite(uint16_t address, uint8_t value)
 {
 	if ((address <= 0x7FFF) || (address >= 0xA000 && address <= 0xBFFF))
 		m_cartridge->write(address, value);
@@ -165,6 +188,9 @@ void Bus::m_transferDMAByte()
 	uint16_t readAddr = m_OAMDMASrc;
 	if (readAddr >= 0xFE00)
 		readAddr -= 0x2000;
-	m_ppu->DMAForceWrite(0xFE00 + offset, read(readAddr));
+
+	uint8_t transferVal = internalRead(readAddr);
+	m_OAMDMAConflictByte = transferVal;
+	m_ppu->DMAForceWrite(0xFE00 + offset, transferVal);
 	m_OAMDMASrc++;
 }
