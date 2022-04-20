@@ -30,11 +30,8 @@ void InterruptManager::requestInterrupt(InterruptType interrupt)
 
 }
 
-InterruptType InterruptManager::getActiveInterrupt()
+InterruptType InterruptManager::getActiveInterrupt(bool unsetFlag)
 {
-	//uint8_t intFlags = m_bus->read(REG_IFLAGS);
-	//uint8_t enabledInterrupts = m_bus->read(REG_IE);
-
 	uint8_t tempIntFlags = IFLAGS;
 
 	uint8_t activeInterrupts = IFLAGS & IE;
@@ -60,7 +57,7 @@ InterruptType InterruptManager::getActiveInterrupt()
 		chosenInterruptType = InterruptType::Joypad;
 	}
 
-	if (interruptsEnabled)				//only turn down flags if interrupts enabled
+	if (interruptsEnabled && unsetFlag)				//only turn down flags if interrupts enabled
 		IFLAGS = tempIntFlags;
 
 	return chosenInterruptType;

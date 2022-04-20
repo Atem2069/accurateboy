@@ -20,7 +20,7 @@ public:
 	~InterruptManager();
 
 	void requestInterrupt(InterruptType interrupt);
-	InterruptType getActiveInterrupt();
+	InterruptType getActiveInterrupt(bool unsetFlag);
 
 	void enableInterrupts();
 	void disableInterrupts();

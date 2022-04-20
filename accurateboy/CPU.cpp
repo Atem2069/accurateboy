@@ -14,7 +14,7 @@ CPU::~CPU()
 
 void CPU::step()
 {
-	InterruptType queuedInt = m_interruptManager->getActiveInterrupt();
+	InterruptType queuedInt = m_interruptManager->getActiveInterrupt(false);
 	if (queuedInt != InterruptType::None)
 	{
 		if (m_interruptManager->getInterruptsEnabled())
@@ -23,6 +23,7 @@ void CPU::step()
 			m_bus->tick();
 			m_bus->tick();
 			m_pushToStack(PC);
+			queuedInt = m_interruptManager->getActiveInterrupt(true);	//IF&IE may change in interrupt processing, so check again. if this ends up being 0 the cpu actually jumps to 0
 			PC = (uint16_t)queuedInt;
 			m_bus->tick();
 		}
