@@ -23,6 +23,9 @@ void InterruptManager::requestInterrupt(InterruptType interrupt)
 	case InterruptType::Timer:
 		IFLAGS |= 0b00000100;
 		break;
+	case InterruptType::Serial:
+		IFLAGS |= 0b00001000;
+		break;
 	case InterruptType::Joypad:
 		IFLAGS |= 0b00010000;
 		break;
@@ -50,6 +53,11 @@ InterruptType InterruptManager::getActiveInterrupt(bool unsetFlag)
 	{
 		tempIntFlags &= 0b11111011;
 		chosenInterruptType = InterruptType::Timer;
+	}
+	else if ((activeInterrupts >> 3) & 0b1)
+	{
+		tempIntFlags &= 0b11110111;
+		chosenInterruptType = InterruptType::Serial;
 	}
 	else if ((activeInterrupts >> 4) & 0b1)
 	{

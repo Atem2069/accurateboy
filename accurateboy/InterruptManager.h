@@ -9,6 +9,7 @@ enum class InterruptType
 	VBlank=0x40,				//VBlank interrupt goes to vector 0x40
 	STAT=0x48,					//LCD STAT interrupt
 	Timer=0x50,					//generated regularly by interval timer
+	Serial=0x58,
 	Joypad=0x60
 };
 
