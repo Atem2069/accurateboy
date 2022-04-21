@@ -27,10 +27,18 @@ Bus::~Bus()
 uint8_t Bus::read(uint16_t address)
 {
 	//oam dma conflict. todo: check which buses are actually affected
-	if (address < 0xFF00 && m_OAMDMAInProgress)
+	if (m_OAMDMAInProgress)
 	{
-		Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("OAM DMA bus conflict: addr={:#x} dma src={:#x} dma dst={:#x} dma val={:#x}", address,m_OAMDMASrc,0xFE00+(m_OAMDMASrc&0xFF),m_OAMDMAConflictByte));
-		return m_OAMDMAConflictByte;
+		if (address < 0xFE00)
+		{
+			Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("OAM DMA bus conflict: addr={:#x} dma src={:#x} dma dst={:#x} dma val={:#x}", address, m_OAMDMASrc, 0xFE00 + (m_OAMDMASrc & 0xFF), m_OAMDMAConflictByte));
+			return m_OAMDMAConflictByte;
+		}
+		if (address >= 0xFE00 && address <= 0xFE9F)
+		{
+			Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Blocked OAM read while DMA active: addr={:#x}", address));
+			return 0xFF;
+		}
 	}
 	return internalRead(address);
 }
@@ -38,11 +46,23 @@ uint8_t Bus::read(uint16_t address)
 void Bus::write(uint16_t address, uint8_t value)
 {
 	//same as in read, todo: ensure conflict only occurs on affected buses
-	if (address < 0xFF00 && m_OAMDMAInProgress)
+	if (m_OAMDMAInProgress)
 	{
-		Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("OAM DMA bus conflict: addr={:#x} dma src={:#x} dma dst={:#x} dma val={:#x}", address, m_OAMDMASrc, 0xFE00 + (m_OAMDMASrc & 0xFF), m_OAMDMAConflictByte));
-		return;
+		if (address < 0xFE00)
+		{
+			Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("OAM DMA bus conflict: addr={:#x} dma src={:#x} dma dst={:#x} dma val={:#x}", address, m_OAMDMASrc, 0xFE00 + (m_OAMDMASrc & 0xFF), m_OAMDMAConflictByte));
+			return;
+		}
+		if (address >= 0xFE00 && address <= 0xFE9F)
+		{
+			if (address >= 0xFE00 && address <= 0xFE9F)
+			{
+				Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("Blocked OAM write while DMA active: addr={:#x} val={:#x}", address,value));
+				return;
+			}
+		}
 	}
+
 
 	internalWrite(address, value);
 }
