@@ -26,10 +26,13 @@ Bus::~Bus()
 
 uint8_t Bus::read(uint16_t address)
 {
-	//oam dma conflict. todo: check which buses are actually affected
 	if (m_OAMDMAInProgress)
 	{
-		if (address < 0xFE00)
+		//DMG: ROM+SRAM+WRAM share a bus, VRAM shares another bus.
+		//This is SLOW:
+		bool conflictOccurs = ((address <= 0x7FFF) || (address >= 0xA000 && address <= 0xFE00)) && ((m_OAMDMASrc <= 0x7FFF) || (m_OAMDMASrc >= 0xA000 && m_OAMDMASrc <= 0xFE00));
+		conflictOccurs |= (address >= 0x8000 && address <= 0x9FFF) && (m_OAMDMASrc >= 0x8000 && m_OAMDMASrc <= 0x9FFF);
+		if (conflictOccurs)
 		{
 			Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("OAM DMA bus conflict: addr={:#x} dma src={:#x} dma dst={:#x} dma val={:#x}", address, m_OAMDMASrc, 0xFE00 + (m_OAMDMASrc & 0xFF), m_OAMDMAConflictByte));
 			return m_OAMDMAConflictByte;
@@ -45,10 +48,12 @@ uint8_t Bus::read(uint16_t address)
 
 void Bus::write(uint16_t address, uint8_t value)
 {
-	//same as in read, todo: ensure conflict only occurs on affected buses
 	if (m_OAMDMAInProgress)
 	{
-		if (address < 0xFE00)
+		//This is SLOW:
+		bool conflictOccurs = ((address <= 0x7FFF) || (address >= 0xA000 && address <= 0xFE00)) && ((m_OAMDMASrc <= 0x7FFF) || (m_OAMDMASrc >= 0xA000 && m_OAMDMASrc <= 0xFE00));
+		conflictOccurs |= (address >= 0x8000 && address <= 0x9FFF) && (m_OAMDMASrc >= 0x8000 && m_OAMDMASrc <= 0x9FFF);
+		if (conflictOccurs)
 		{
 			Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("OAM DMA bus conflict: addr={:#x} dma src={:#x} dma dst={:#x} dma val={:#x}", address, m_OAMDMASrc, 0xFE00 + (m_OAMDMASrc & 0xFF), m_OAMDMAConflictByte));
 			return;
