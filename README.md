@@ -15,6 +15,7 @@ Highly accurate Game Boy emulator, with a T-Cycle accurate Pixel FIFO implementa
 
 ### Acceptance
 | Name | Pass? |
+| -----|------ |
 | add_sp_e_timing | :heavy_check_mark: |
 | call_cc_timing | :heavy_check_mark: |
 | call_cc_timing2 | :x: |
