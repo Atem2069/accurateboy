@@ -13,7 +13,11 @@ enum class FetcherStage
 	FetchTileNumber,
 	FetchTileDataLow,
 	FetchTileDataHigh,
-	PushToFIFO
+	PushToFIFO,
+	SpriteFetchTileNumber,
+	SpriteFetchTileDataLow,
+	SpriteFetchTileDataHigh,
+	SpritePushToFIFO
 };
 
 struct FIFOPixel
@@ -81,15 +85,15 @@ private:
 	FetcherStage m_fetcherStage;
 	int m_fetcherX = 0;
 	int m_lcdXCoord = 0;
-	uint8_t m_tileNumber = 0;
-	uint8_t m_tileDataLow = 0;
-	uint8_t m_tileDataHigh = 0;
+	uint8_t m_tileNumber = 0, m_tileDataLow = 0, m_tileDataHigh = 0;
+	uint8_t m_spriteTileNumber = 0, m_spriteTileDataLow = 0, m_spriteTileDataHigh = 0;
 	bool m_fetcherBeginDelayed = false;
 	bool m_fetchingWindowTiles = false;
 	uint8_t m_windowLineCounter = 0;
 	int m_discardCounter = 0;
 
 	bool m_spriteFetchInProgress = false;
+	bool m_lastPushSucceeded = false;
 
 	void m_fetchTileNumber();
 	void m_fetchTileDataLow();

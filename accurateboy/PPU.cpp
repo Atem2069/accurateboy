@@ -183,34 +183,24 @@ void PPU::m_LCDTransfer()	//mode 3
 		m_modeCycleDiff = 0;
 		m_fetcherBeginDelayed = true;
 	}
-
-	if (!m_spriteFetchInProgress)
+	switch (m_fetcherStage)
 	{
-		switch (m_fetcherStage)
-		{
-		case FetcherStage::FetchTileNumber:
-			m_fetchTileNumber(); break;
-		case FetcherStage::FetchTileDataLow:
-			m_fetchTileDataLow(); break;
-		case FetcherStage::FetchTileDataHigh:
-			m_fetchTileDataHigh(); break;
-		case FetcherStage::PushToFIFO:
-			m_pushToFIFO(); break;
-		}
-	}
-	else
-	{
-		switch (m_fetcherStage)
-		{
-		case FetcherStage::FetchTileNumber:
-			m_spriteFetchTileNumber(); break;
-		case FetcherStage::FetchTileDataLow:
-			m_spriteFetchTileDataLow(); break;
-		case FetcherStage::FetchTileDataHigh:
-			m_spriteFetchTileDataHigh(); break;
-		case FetcherStage::PushToFIFO:
-			m_spritePushToFIFO(); break;
-		}
+	case FetcherStage::FetchTileNumber:
+		m_fetchTileNumber(); break;
+	case FetcherStage::FetchTileDataLow:
+		m_fetchTileDataLow(); break;
+	case FetcherStage::FetchTileDataHigh:
+		m_fetchTileDataHigh(); break;
+	case FetcherStage::PushToFIFO:
+		m_pushToFIFO(); break;
+	case FetcherStage::SpriteFetchTileNumber:
+		m_spriteFetchTileNumber(); break;
+	case FetcherStage::SpriteFetchTileDataLow:
+		m_spriteFetchTileDataLow(); break;
+	case FetcherStage::SpriteFetchTileDataHigh:
+		m_spriteFetchTileDataHigh(); break;
+	case FetcherStage::SpritePushToFIFO:
+		m_spritePushToFIFO(); break;
 	}
 
 	//pop off, push to display
@@ -276,10 +266,12 @@ void PPU::m_LCDTransfer()	//mode 3
 			{
 				m_spriteBuffer[i].rendered = true;
 				m_consideredSpriteIndex = i;
-				m_modeCycleDiff = 1;
-				if (m_fetcherStage != FetcherStage::FetchTileNumber)	//fetcher might have already advanced if it's in another step, so set it back to ensure it gets rendered again
-					m_fetcherX--;
-				m_fetcherStage = FetcherStage::FetchTileNumber;
+				//m_modeCycleDiff = 1;
+				//if (m_fetcherStage != FetcherStage::FetchTileNumber)	//fetcher might have already advanced if it's in another step, so set it back to ensure it gets rendered again
+				//	m_fetcherX--;
+				//m_fetcherStage = FetcherStage::FetchTileNumber;
+				if (m_fetcherStage == FetcherStage::FetchTileNumber && m_modeCycleDiff == 0)
+					m_fetcherStage = FetcherStage::SpriteFetchTileNumber; m_lastPushSucceeded = true;
 				m_spriteFetchInProgress = true;
 				i = 100;
 
@@ -372,8 +364,13 @@ void PPU::m_fetchTileDataHigh()
 	if (m_modeCycleDiff == 2)
 	{
 		m_modeCycleDiff = 0;
-		m_fetcherStage = FetcherStage::PushToFIFO;
-
+		if (!m_spriteFetchInProgress)
+			m_fetcherStage = FetcherStage::PushToFIFO;
+		else
+		{
+			m_lastPushSucceeded = false;
+			m_fetcherStage = FetcherStage::SpriteFetchTileNumber;
+		}
 		//same thing really, just + 1!
 		uint16_t tileDataOffset = (m_getTilemap()) ? 0x0000 : 0x1000;
 		if (!m_getTilemap())
@@ -391,8 +388,10 @@ void PPU::m_fetchTileDataHigh()
 
 void PPU::m_pushToFIFO()
 {
+	m_lastPushSucceeded = false;
 	if (m_backgroundFIFO.size()==0)
 	{
+		m_lastPushSucceeded = true;
 		m_modeCycleDiff = 0;
 		m_fetcherStage = FetcherStage::FetchTileNumber;
 		for (int i = 0; i < 8; i++)
@@ -410,25 +409,27 @@ void PPU::m_pushToFIFO()
 			m_backgroundFIFO.push_back(tempPixel);
 		}
 	}
+	if (m_spriteFetchInProgress)				//if fetching sprite tiles, instead of resetting to bg fetching - go to sprite fetching
+		m_fetcherStage = FetcherStage::SpriteFetchTileNumber;
 }
 
 void PPU::m_spriteFetchTileNumber()
 {
 	m_modeCycleDiff = 0;
-	m_fetcherStage = FetcherStage::FetchTileDataLow;
+	m_fetcherStage = FetcherStage::SpriteFetchTileDataLow;
 
 	OAMEntry curSprite = m_spriteBuffer[m_consideredSpriteIndex];
 	bool yFlip = ((curSprite.attributes >> 6) & 0b1);
-	m_tileNumber = curSprite.tileNumber;
+	m_spriteTileNumber = curSprite.tileNumber;
 	if (m_getSpriteSize())
 	{
 		uint16_t diff = ((LY + 16) - curSprite.y);
 		if (yFlip)
 			diff = 15 - diff;
 		if (diff >= 8)
-			m_tileNumber |= 0x01;
+			m_spriteTileNumber |= 0x01;
 		else
-			m_tileNumber &= 0xFE;
+			m_spriteTileNumber &= 0xFE;
 	}
 }
 
@@ -437,19 +438,19 @@ void PPU::m_spriteFetchTileDataLow()
 	if (m_modeCycleDiff == 2)
 	{
 		m_modeCycleDiff = 0;
-		m_fetcherStage = FetcherStage::FetchTileDataHigh;
+		m_fetcherStage = FetcherStage::SpriteFetchTileDataHigh;
 
 		OAMEntry curSprite = m_spriteBuffer[m_consideredSpriteIndex];
 		bool yFlip = ((curSprite.attributes >> 6) & 0b1);
 
-		uint16_t tileDataOffset = m_tileNumber * 16;
+		uint16_t tileDataOffset = m_spriteTileNumber * 16;
 		uint16_t diff = ((LY + 16) - curSprite.y);
 		int flipOffset = m_getSpriteSize() ? 15 : 7;
 		if (!yFlip)
 			tileDataOffset += (2 * ((diff % 8)));	//then extract correct row based on ly + scy mod 8
 		else
 			tileDataOffset += (2 * ((flipOffset - diff) % 8));
-		m_tileDataLow = m_VRAM[tileDataOffset];
+		m_spriteTileDataLow = m_VRAM[tileDataOffset];
 	}
 }
 
@@ -458,12 +459,12 @@ void PPU::m_spriteFetchTileDataHigh()
 	if (m_modeCycleDiff == 2)
 	{
 		m_modeCycleDiff = 0;
-		m_fetcherStage = FetcherStage::PushToFIFO;
+		m_fetcherStage = FetcherStage::SpritePushToFIFO;
 
 		OAMEntry curSprite = m_spriteBuffer[m_consideredSpriteIndex];
 		bool yFlip = ((curSprite.attributes >> 6) & 0b1);
 
-		uint16_t tileDataOffset = m_tileNumber * 16;
+		uint16_t tileDataOffset = m_spriteTileNumber * 16;
 
 		uint16_t diff = ((LY + 16) - curSprite.y);
 		int flipOffset = m_getSpriteSize() ? 15 : 7;
@@ -471,14 +472,17 @@ void PPU::m_spriteFetchTileDataHigh()
 			tileDataOffset += (2 * (diff % 8));	//then extract correct row based on ly + scy mod 8
 		else
 			tileDataOffset += (2 * ((flipOffset - diff) % 8));
-		m_tileDataHigh = m_VRAM[tileDataOffset+1];
+		m_spriteTileDataHigh = m_VRAM[tileDataOffset+1];
 	}
 }
 
 void PPU::m_spritePushToFIFO()
 {
 	m_modeCycleDiff = 1;
-	m_fetcherStage = FetcherStage::FetchTileNumber;
+	if (m_lastPushSucceeded)
+		m_fetcherStage = FetcherStage::FetchTileNumber;
+	else
+		m_fetcherStage = FetcherStage::PushToFIFO;
 	m_spriteFetchInProgress = false;
 
 	OAMEntry curSprite = m_spriteBuffer[m_consideredSpriteIndex];
@@ -502,8 +506,8 @@ void PPU::m_spritePushToFIFO()
 		uint8_t shiftOffset = 7 - i;
 		if (xFlip)
 			shiftOffset = i;
-		uint8_t colHigh = (m_tileDataHigh >> shiftOffset) & 0b1;
-		uint8_t colLow = (m_tileDataLow >> shiftOffset) & 0b1;
+		uint8_t colHigh = (m_spriteTileDataHigh >> shiftOffset) & 0b1;
+		uint8_t colLow = (m_spriteTileDataLow >> shiftOffset) & 0b1;
 		uint8_t colID = (colHigh << 1) | colLow;
 
 		bool priority = !((curSprite.attributes >> 7) & 0b1);
