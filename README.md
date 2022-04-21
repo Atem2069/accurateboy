@@ -1,6 +1,6 @@
 # accurateboy
 
-GBEmu rewrite with much higher accuracy, including M-Cycle CPU timing and T-Cycle PPU emulation with a pixel FIFO.
+Highly accurate Game Boy emulator, with a T-Cycle accurate Pixel FIFO implementation.
 
 ## Blargg Tests
 | Name | Pass? |
@@ -13,6 +13,38 @@ GBEmu rewrite with much higher accuracy, including M-Cycle CPU timing and T-Cycl
 
 ## mooneye-gb Suite
 
+### Acceptance
+| Name | Pass? |
+| add_sp_e_timing | :heavy_check_mark: |
+| call_cc_timing | :heavy_check_mark: |
+| call_cc_timing2 | :x: |
+| call_timing | :heavy_check_mark: |
+| call_timing2 | :x: |
+| di_timing-GS | :heavy_check_mark: |
+| div_timing | :heavy_check_mark: |
+| ei_sequence | :x: FAIL: NO INTR |
+| ei_timing | :heavy_check_mark: |
+| halt_ime0_ei | :heavy_check_mark: |
+| halt_ime0_nointr_timing | :heavy_check_mark: |
+| halt_ime1_timing | :heavy_check_mark: |
+| halt_ime1_timing2-GS | :heavy_check_mark: |
+| if_ie_registers | :heavy_check_mark: |
+| intr_timing | :heavy_check_mark: |
+| jp_cc_timing | :heavy_check_mark: |
+| jp_timing | :heavy_check_mark: |
+| ld_hl_sp_e_timing | :heavy_check_mark: |
+| oam_dma_restart | :heavy_check_mark: |
+| oam_dma_start | :heavy_check_mark: |
+| oam_dma_timing | :heavy_check_mark: |
+| pop_timing | :heavy_check_mark: |
+| push_timing | :heavy_check_mark: |
+| rapid_de_ei | :heavy_check_mark: |
+| ret_cc_timing | :x: FAIL: ROUND 2 |
+| ret_timing | :heavy_check_mark: |
+| reti_intr_timing | :heavy_check_mark: |
+| reti_timing | :heavy_check_mark: |
+| rst_timing | :heavy_check_mark: |
+
 ### bits
 | Name | Pass? |
 | -----|------ |
@@ -24,7 +56,7 @@ GBEmu rewrite with much higher accuracy, including M-Cycle CPU timing and T-Cycl
  - [x] daa
 
 ### interrupts
- - [ ] ie_push (R1: not cancelled)
+ - [ ] ie_push (R3: unwanted cancel)
 
 ### OAM DMA
 | Name | Pass? |
