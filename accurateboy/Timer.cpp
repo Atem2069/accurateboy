@@ -12,6 +12,8 @@ Timer::~Timer()
 
 void Timer::step()
 {
+	if (m_timerIrqCycle)
+		m_timerIrqCycle = false;
 	for (int i = 0; i < 4; i++)
 		m_tickTCycle();
 }
@@ -23,6 +25,7 @@ void Timer::m_tickTCycle()
 		m_timerReloadCycles++;
 		if (m_timerReloadCycles == 4)
 		{
+			m_timerIrqCycle = true;
 			m_timerReloadCycles = 0;
 			m_timerReloading = false;
 			TIMA = TMA;
@@ -63,7 +66,6 @@ void Timer::m_tickTIMA(uint16_t lastDiv, uint16_t newDiv)
 			if (TIMA == 0)
 			{
 				m_timerReloadCycles = 0;
-				m_timerWeirdCycle = true;
 				m_timerReloading = true;
 			}
 		}
@@ -73,8 +75,6 @@ void Timer::m_tickTIMA(uint16_t lastDiv, uint16_t newDiv)
 
 uint8_t Timer::read(uint16_t address)
 {
-	if (m_timerWeirdCycle)
-		m_timerWeirdCycle = false;
 	switch (address)
 	{
 	case REG_DIV:
@@ -96,7 +96,7 @@ void Timer::write(uint16_t address, uint8_t value)
 		m_tickTIMA(m_divider, 0);
 		m_divider = 0; break;
 	case REG_TIMA:
-		if (!m_timerReloading || m_timerWeirdCycle)
+		if (!m_timerIrqCycle)	//TIMA is always writable, except for the cycle where TIMA <- TMA.
 		{
 			TIMA = value;
 			m_timerReloading = false;
@@ -104,12 +104,11 @@ void Timer::write(uint16_t address, uint8_t value)
 		}
 		break;
 	case REG_TMA:
-		if(!m_timerReloading)
-			TMA = value;
+		TMA = value;
+		if (m_timerIrqCycle)	//if TMA written on same m-cycle that the irq is raised (i.e. TIMA is loaded), then TIMA gets loaded with the new value from TMA
+			TIMA = TMA;
 		break;
 	case REG_TAC:
 		TAC = value; break;
 	}
-	if (m_timerWeirdCycle)
-		m_timerWeirdCycle = false;
 }
