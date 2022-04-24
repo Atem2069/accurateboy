@@ -306,7 +306,6 @@ void PPU::m_LCDTransfer()	//mode 3
 		m_modeCycleDiff = 0;
 		STAT &= 0b11111100;
 		m_checkSTATInterrupt();
-		m_VRAMAccessBlocked = false; m_OAMAccessBlocked = false;
 	}
 }
 //todo:
