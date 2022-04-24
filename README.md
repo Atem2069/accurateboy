@@ -21,9 +21,9 @@ Highly accurate Game Boy emulator, with a T-Cycle accurate Pixel FIFO implementa
 | -----|------ |
 | add_sp_e_timing | :heavy_check_mark: |
 | call_cc_timing | :heavy_check_mark: |
-| call_cc_timing2 | :x: |
+| call_cc_timing2 | :heavy_check_mark: |
 | call_timing | :heavy_check_mark: |
-| call_timing2 | :x: |
+| call_timing2 | :heavy_check_mark: |
 | di_timing-GS | :heavy_check_mark: |
 | div_timing | :heavy_check_mark: |
 | ei_sequence | :x: FAIL: NO INTR |
@@ -42,8 +42,8 @@ Highly accurate Game Boy emulator, with a T-Cycle accurate Pixel FIFO implementa
 | oam_dma_timing | :heavy_check_mark: |
 | pop_timing | :heavy_check_mark: |
 | push_timing | :heavy_check_mark: |
-| rapid_de_ei | :heavy_check_mark: |
-| ret_cc_timing | :x: FAIL: ROUND 2 |
+| rapid_di_ei | :heavy_check_mark: |
+| ret_cc_timing | :heavy_check_mark: |
 | ret_timing | :heavy_check_mark: |
 | reti_intr_timing | :heavy_check_mark: |
 | reti_timing | :heavy_check_mark: |
