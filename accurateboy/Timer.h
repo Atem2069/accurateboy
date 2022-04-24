@@ -17,6 +17,8 @@ public:
 private:
 	void m_tickTCycle();
 	void m_tickTIMA(uint16_t lastDiv, uint16_t newDiv);
+	void m_checkTACMuxChange(uint8_t newTAC);
+	int m_convertMuxToShiftAmount(uint8_t mux);
 
 	std::shared_ptr<InterruptManager> m_interruptManager;
 

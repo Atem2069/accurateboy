@@ -45,18 +45,7 @@ void Timer::m_tickTIMA(uint16_t lastDiv, uint16_t newDiv)
 	uint8_t timerMode = (TAC & 0b11);
 	if (timerEnabled)
 	{
-		int m_shiftAmount = 0;
-		switch (timerMode)	//the shift is -1 bc it's edge triggered
-		{
-		case 0b00:
-			m_shiftAmount = 9; break;
-		case 0b01:
-			m_shiftAmount = 3; break;
-		case 0b10:
-			m_shiftAmount = 5; break;
-		case 0b11:
-			m_shiftAmount = 7; break;
-		}
+		int m_shiftAmount = m_convertMuxToShiftAmount(timerMode);
 
 		bool shouldTick = ((lastDiv >> m_shiftAmount) & 0b1) && (!((newDiv >> m_shiftAmount) & 0b1));	//falling edge (1 in last tick, 0 now)
 
@@ -71,6 +60,42 @@ void Timer::m_tickTIMA(uint16_t lastDiv, uint16_t newDiv)
 		}
 
 	}
+}
+
+void Timer::m_checkTACMuxChange(uint8_t newTAC)
+{
+	if (!((newTAC >> 2) & 0b1))
+		return;
+	uint8_t oldTimerMode = (TAC & 0b11);
+	uint8_t newTimerMode = (newTAC & 0b11);
+	int oldTimerShift = m_convertMuxToShiftAmount(oldTimerMode);
+	int newTimerShift = m_convertMuxToShiftAmount(newTimerMode);
+	if (!((m_divider >> oldTimerShift) & 0b1) && ((m_divider >> newTimerShift) & 0b1))
+	{
+		TIMA++;
+		if (TIMA == 0)
+		{
+			m_timerReloadCycles = 0;
+			m_timerReloading = true;
+		}
+	}
+}
+
+int Timer::m_convertMuxToShiftAmount(uint8_t mux)
+{
+	int m_shiftAmount = 0;
+	switch (mux)
+	{
+	case 0b00:
+		m_shiftAmount = 9; break;
+	case 0b01:
+		m_shiftAmount = 3; break;
+	case 0b10:
+		m_shiftAmount = 5; break;
+	case 0b11:
+		m_shiftAmount = 7; break;
+	}
+	return m_shiftAmount;
 }
 
 uint8_t Timer::read(uint16_t address)
@@ -109,6 +134,10 @@ void Timer::write(uint16_t address, uint8_t value)
 			TIMA = TMA;
 		break;
 	case REG_TAC:
-		TAC = value; break;
+		if (((TAC >> 2) & 0b1) && !((value >> 2) & 0b1))
+			m_tickTIMA(m_divider, 0);	//check for falling edge and tick timer (weird behaviour when tac disabled)
+		m_checkTACMuxChange(value);
+		TAC = value;
+		break;
 	}
 }
