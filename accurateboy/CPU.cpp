@@ -980,9 +980,10 @@ void CPU::_call()
 	uint8_t addrHigh = m_fetch();
 	uint16_t addr = (((uint16_t)addrHigh) << 8) | (uint16_t)addrLow;
 
+	m_bus->tick();
+
 	m_pushToStack(PC);
 	PC = addr;
-	m_bus->tick();
 
 }
 
@@ -1043,30 +1044,30 @@ void CPU::_return()
 
 void CPU::_returnIfZeroNotSet()
 {
+	m_bus->tick();
 	if (!m_getZeroFlag())
 		_return();
-	m_bus->tick();
 }
 
 void CPU::_returnIfZeroSet()
 {
+	m_bus->tick();
 	if (m_getZeroFlag())
 		_return();
-	m_bus->tick();
 }
 
 void CPU::_returnIfCarryNotSet()
 {
+	m_bus->tick();
 	if (!m_getCarryFlag())
 		_return();
-	m_bus->tick();
 }
 
 void CPU::_returnIfCarrySet()
 {
+	m_bus->tick();
 	if (m_getCarryFlag())
 		_return();
-	m_bus->tick();
 }
 
 void CPU::_returnFromInterrupt()
