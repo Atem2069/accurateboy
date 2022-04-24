@@ -36,10 +36,14 @@ void CPU::step()
 	else
 		m_bus->tick();
 
-	if ((m_EIRequested) && (m_lastOpcode != 0xFB))	//odd hack, essentially only re-enable after an instruction has passed. TODO: EI and then DI overrides the enable
+	if (m_EIRequested)	//odd hack, essentially only re-enable after an instruction has passed. TODO: EI and then DI overrides the enable
 	{
-		m_EIRequested = false;
-		m_interruptManager->enableInterrupts();
+		m_instrSinceEI += 1;
+		if (m_instrSinceEI > 1)
+		{
+			m_EIRequested = false;
+			m_interruptManager->enableInterrupts();
+		}
 	}
 }
 
@@ -1382,6 +1386,8 @@ void CPU::_disableInterrupts()
 
 void CPU::_enableInterrupts()
 {
+	if(!m_EIRequested)
+		m_instrSinceEI = 0;
 	m_EIRequested = true;
 }
 

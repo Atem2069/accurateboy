@@ -54,6 +54,7 @@ private:
 	uint8_t m_lastOpcode = 0;
 
 	bool m_EIRequested = false;
+	int m_instrSinceEI = 0;
 
 	std::shared_ptr<Bus> m_bus;
 	std::shared_ptr<InterruptManager> m_interruptManager;
