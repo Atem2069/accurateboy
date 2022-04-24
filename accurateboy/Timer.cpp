@@ -135,7 +135,16 @@ void Timer::write(uint16_t address, uint8_t value)
 		break;
 	case REG_TAC:
 		if (((TAC >> 2) & 0b1) && !((value >> 2) & 0b1))
+		{
 			m_tickTIMA(m_divider, 0);	//check for falling edge and tick timer (weird behaviour when tac disabled)
+			if (m_timerReloading && m_timerReloadCycles == 0)
+			{
+				m_timerReloadCycles = 0;
+				m_timerReloading = false;
+				TIMA = TMA;
+				m_interruptManager->requestInterrupt(InterruptType::Timer);
+			}
+		}
 		m_checkTACMuxChange(value);
 		TAC = value;
 		break;
