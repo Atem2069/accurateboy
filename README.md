@@ -72,7 +72,7 @@ Highly accurate Game Boy emulator, with a T-Cycle accurate Pixel FIFO implementa
 ### PPU
 | Name | Pass? |
 | -----|------ |
-| hblank_ly_scx_timing-GS | :x: |
+| hblank_ly_scx_timing-GS | :heavy_check_mark: |
 | intr_1_2_timing-GS | :heavy_check_mark: |
 | intr_2_0_timing | :heavy_check_mark: |
 | intr_2_mode0_timing | :heavy_check_mark: |
@@ -103,8 +103,8 @@ Highly accurate Game Boy emulator, with a T-Cycle accurate Pixel FIFO implementa
 |  tim11 | :heavy_check_mark: |
 | tim11_div_trigger | :heavy_check_mark: |
 | tima_reload | :heavy_check_mark: |
-| tima_write_reloading | :x: |
-| tma_write_reloading | :x: |
+| tima_write_reloading | :heavy_check_mark: |
+| tma_write_reloading | :heavy_check_mark: |
 
 
 
