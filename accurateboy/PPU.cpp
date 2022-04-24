@@ -573,7 +573,14 @@ void PPU::write(uint16_t address, uint8_t value)
 	switch (address)
 	{
 	case REG_LCDC:
-		LCDC=value; break;
+		//check if LCD is being (re)enabled (when LCD becomes disabled the STAT reads out mode 0 so mode has to be corrected)
+		if (!((LCDC >> 7) & 0b1) && ((value >> 7) & 0b1))
+		{
+			LY = 0;
+			STAT |= 0b00000010;	//enter mode 2 for line 0 
+		}
+		LCDC=value;
+		break;
 	case REG_STAT:
 		STAT &= 0b00000111; STAT |= (value & 0b11111000); break;
 	case REG_SCX:
