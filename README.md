@@ -93,7 +93,7 @@ Highly accurate Game Boy emulator, with a T-Cycle accurate Pixel FIFO implementa
 | Name | Pass? |
 | -----|------ |
 | div_write | :heavy_check_mark: |
-| rapid_toggle | :x: |
+| rapid_toggle | :heavy_check_mark: |
 | tim00 | :heavy_check_mark: |
 | tim00_div_trigger | :heavy_check_mark: |
 | tim01 | :heavy_check_mark: |
