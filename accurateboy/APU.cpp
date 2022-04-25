@@ -26,15 +26,9 @@ APU::~APU()
 
 void APU::step()
 {
-	for (int i = 0; i < 4; i++)
-		m_cycleStep();
-}
-
-void APU::m_cycleStep()
-{
 	//steps a single t-cycle
 	chan2_freqTimer--;	//cycle diff is measured in m-cycles, but frequency timer decrements per t-cycle.
-	if (chan2_freqTimer <= 0)			
+	if (chan2_freqTimer <= 0)
 	{
 		uint8_t freqLow = m_channels[1].r[3];
 		uint8_t freqHigh = m_channels[1].r[4] & 0b00000111;
@@ -122,7 +116,7 @@ void APU::m_cycleStep()
 						newFreq = oldFreq + newFreq;
 
 					if (newFreq > 2047)	//overflow: disable channel
-						NR52 &= 0b11111110;	
+						NR52 &= 0b11111110;
 
 					if (newFreq <= 2047 && chan1_sweepShift > 0)
 					{

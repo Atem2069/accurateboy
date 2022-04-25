@@ -186,9 +186,12 @@ void Bus::internalWrite(uint16_t address, uint8_t value)
 void Bus::tick()
 {
 	//ticks all components
-	m_ppu->step();
-	m_apu->step();
-	m_timer->step();
+	for (int i = 0; i < 4; i++)
+	{
+		m_ppu->step();
+		m_timer->step(i == 0);
+		m_apu->step();
+	}
 
 	if (m_OAMDMAInProgress)
 		m_transferDMAByte();

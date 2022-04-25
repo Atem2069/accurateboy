@@ -10,16 +10,10 @@ Timer::~Timer()
 	
 }
 
-void Timer::step()
+void Timer::step(bool firstCycle)
 {
-	if (m_timerIrqCycle)
+	if (m_timerIrqCycle && firstCycle)
 		m_timerIrqCycle = false;
-	for (int i = 0; i < 4; i++)
-		m_tickTCycle();
-}
-
-void Timer::m_tickTCycle()
-{
 	if (m_timerReloading)
 	{
 		m_timerReloadCycles++;

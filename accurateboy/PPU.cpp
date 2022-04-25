@@ -15,36 +15,6 @@ PPU::~PPU()
 
 void PPU::step()
 {
-	for (int i = 0; i < 4; i++)
-		m_tickTCycle();
-}
-
-void PPU::m_checkSTATInterrupt()
-{
-	uint8_t curPPUMode = STAT & 0b11;
-
-	bool lycEnabled = (STAT >> 6) & 0b1;
-	bool oamEnabled = (STAT >> 5) & 0b1;
-	bool vblankEnabled = (STAT >> 4) & 0b1;
-	bool hblankEnabled = (STAT >> 3) & 0b1;
-
-	bool statCondHigh = false;
-	statCondHigh = (lycEnabled && (LY == LYC));
-	if (LY == LYC)
-		STAT |= 0b00000100;
-	else
-		STAT &= 0b11111011;
-	statCondHigh |= (oamEnabled && (curPPUMode == 2));
-	statCondHigh |= (vblankEnabled && (curPPUMode == 1));
-	statCondHigh |= (hblankEnabled && (curPPUMode == 0));
-
-	if (statCondHigh && !m_lastStatState)
-		m_interruptManager->requestInterrupt(InterruptType::STAT);
-	m_lastStatState = statCondHigh;
-}
-
-void PPU::m_tickTCycle()
-{
 	if (!m_getLCDEnabled())
 	{
 		STAT &= 0b11111100;
@@ -69,6 +39,30 @@ void PPU::m_tickTCycle()
 	case 3:
 		m_LCDTransfer(); break;
 	}
+}
+
+void PPU::m_checkSTATInterrupt()
+{
+	uint8_t curPPUMode = STAT & 0b11;
+
+	bool lycEnabled = (STAT >> 6) & 0b1;
+	bool oamEnabled = (STAT >> 5) & 0b1;
+	bool vblankEnabled = (STAT >> 4) & 0b1;
+	bool hblankEnabled = (STAT >> 3) & 0b1;
+
+	bool statCondHigh = false;
+	statCondHigh = (lycEnabled && (LY == LYC));
+	if (LY == LYC)
+		STAT |= 0b00000100;
+	else
+		STAT &= 0b11111011;
+	statCondHigh |= (oamEnabled && (curPPUMode == 2));
+	statCondHigh |= (vblankEnabled && (curPPUMode == 1));
+	statCondHigh |= (hblankEnabled && (curPPUMode == 0));
+
+	if (statCondHigh && !m_lastStatState)
+		m_interruptManager->requestInterrupt(InterruptType::STAT);
+	m_lastStatState = statCondHigh;
 }
 
 void PPU::m_hblank()	//mode 0

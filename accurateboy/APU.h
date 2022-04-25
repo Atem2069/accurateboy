@@ -32,7 +32,6 @@ public:
 	uint8_t readIORegister(uint16_t address);
 
 private:
-	void m_cycleStep();
 	Channel m_channels[4];
 	uint8_t NR50 = 0;
 	uint8_t NR51 = 0;

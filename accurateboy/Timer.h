@@ -10,12 +10,11 @@ public:
 	Timer(std::shared_ptr<InterruptManager>& interruptManager);
 	~Timer();
 
-	void step();
+	void step(bool firstCycle);
 	
 	uint8_t read(uint16_t address);
 	void write(uint16_t address, uint8_t value);
 private:
-	void m_tickTCycle();
 	void m_tickTIMA(uint16_t lastDiv, uint16_t newDiv);
 	void m_checkTACMuxChange(uint8_t newTAC);
 	int m_convertMuxToShiftAmount(uint8_t mux);

@@ -50,7 +50,6 @@ public:
 	uint32_t* getDisplayBuffer();
 private:
 	void m_checkSTATInterrupt();
-	void m_tickTCycle();
 	void m_hblank();
 	void m_vblank();
 	void m_OAMSearch();
