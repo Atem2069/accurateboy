@@ -196,7 +196,28 @@ bool CPU::getInDoubleSpeedMode() {return m_isInDoubleSpeedMode;}
 
 void CPU::m_set8BitArithmeticFlags(uint8_t opA, uint8_t opB, bool carryIn, bool subtract)
 {
+	uint8_t carryInVal = (carryIn) ? m_getCarryFlag() : 0;
 
+	if (subtract)
+	{
+		opB = ~(opB)+1;
+		carryInVal = ~(carryInVal)+1;
+	}
+
+	m_setZeroFlag((opA + opB + carryInVal) == 0);
+	m_setSubtractFlag(subtract);
+	m_setHalfCarryFlag(((opA & 0xF) + (opB & 0xF) + (carryInVal & 0xF)) > 0xF);
+	m_setCarryFlag((opA + opB + carryIn) < opA);	//double check this
+	if (subtract)
+		m_setCarryFlag(!m_getCarryFlag());			//double check this too
+}
+
+void CPU::m_set8BitLogicalFlags(uint8_t value, bool AND)
+{
+	m_setZeroFlag(value == 0);
+	m_setSubtractFlag(false);
+	m_setHalfCarryFlag(AND);
+	m_setCarryFlag(false);
 }
 
 bool CPU::m_getZeroFlag() { return (AF.low & 0b10000000) >> 7; }
@@ -309,6 +330,8 @@ void CPU::setR8(uint8_t id, uint8_t value)
 
 uint16_t CPU::getR16(uint8_t id, int group)
 {
+	if (group == 2)
+		Logger::getInstance()->msg(LoggerSeverity::Error, "Group 2 decode attempted (not currently supported)");
 	switch (id & 0b11)
 	{
 	case 0:
@@ -318,14 +341,10 @@ uint16_t CPU::getR16(uint8_t id, int group)
 	case 2:
 		if (group == 1 || group==3)
 			return HL.reg;
-		if (group == 2)
-			return m_bus->read(HL.reg++);
 		break;
 	case 3:
 		if (group == 1)
 			return SP.reg;
-		if (group == 2)
-			return m_bus->read(HL.reg--);
 		if (group == 3)
 			return AF.reg;
 	}
@@ -333,6 +352,8 @@ uint16_t CPU::getR16(uint8_t id, int group)
 
 void CPU::setR16(uint8_t id, uint16_t value, int group)
 {
+	if (group == 2)
+		Logger::getInstance()->msg(LoggerSeverity::Error, "Group 2 decode attempted (not currently supported)");
 	switch (id & 0b11)
 	{
 	case 0:
@@ -342,14 +363,10 @@ void CPU::setR16(uint8_t id, uint16_t value, int group)
 	case 2:
 		if (group == 1 || group == 3)
 			HL.reg = value;
-		if (group == 2)
-			m_bus->write(HL.reg++, value & 0xFF);
 		break;
 	case 3:
 		if (group == 1)
 			SP.reg = value;
-		if (group == 2)
-			m_bus->write(HL.reg--, value & 0xFF);
 		if (group == 3)
 			AF.reg = value;
 		break;
@@ -426,57 +443,240 @@ void CPU::_addHLR16()
 
 void CPU::_storeAccum()
 {
-
+	uint8_t regIndex = (m_lastOpcode >> 4) & 0b11;
+	switch (regIndex)
+	{
+	case 0b00:
+		m_bus->write(BC.reg, AF.high); break;
+	case 0b01:
+		m_bus->write(DE.reg, AF.high); break;
+	case 0b10:
+		m_bus->write(HL.reg++, AF.high); break;
+	case 0b11:
+		m_bus->write(HL.reg--, AF.high); break;
+	}
 }
 
 void CPU::_loadAccum()
 {
-
+	uint8_t regIndex = (m_lastOpcode >> 4) & 0b11;
+	switch (regIndex)
+	{
+	case 0b00:
+		AF.high = m_bus->read(BC.reg); break;
+	case 0b01:
+		AF.high = m_bus->read(DE.reg); break;
+	case 0b10:
+		AF.high = m_bus->read(HL.reg++); break;
+	case 0b11:
+		AF.high = m_bus->read(HL.reg--); break;
+	}
 }
 
 void CPU::_incR16()
 {
-
+	uint8_t regIndex = (m_lastOpcode >> 4) & 0b11;
+	uint16_t regContents = getR16(regIndex, 1);
+	setR16(regIndex, regContents + 1, 1);
+	m_bus->tick();	//some internal cycle
 }
 
 void CPU::_decR16()
 {
-
+	uint8_t regIndex = (m_lastOpcode >> 4) & 0b11;
+	uint16_t regContents = getR16(regIndex, 1);
+	setR16(regIndex, regContents - 1, 1);
+	m_bus->tick();	//some internal cycle
 }
 
 void CPU::_incR8()
 {
+	uint8_t regIndex = (m_lastOpcode >> 3) & 0b111;
+	uint8_t regContents = getR8(regIndex);
 
+	m_setZeroFlag(regContents == 0xFF);
+	m_setSubtractFlag(false);
+	m_setHalfCarryFlag((regContents & 0xF) == 0xF);
+
+	setR8(regIndex, regContents + 1);
 }
 
 void CPU::_decR8()
 {
+	uint8_t regIndex = (m_lastOpcode >> 3) & 0b111;
+	uint8_t regContents = getR8(regIndex);
 
+	m_setZeroFlag(regContents == 0x1);
+	m_setSubtractFlag(true);
+	m_setHalfCarryFlag((regContents & 0xF) == 0xF);
+
+	setR8(regIndex, regContents - 1);
 }
 
 void CPU::_ldR8Immediate()
 {
-
+	uint8_t val = m_fetch();
+	uint8_t regIndex = (m_lastOpcode >> 3) & 0b111;
+	setR8(regIndex, val);
 }
 
 void CPU::_bitwiseOps()
 {
+	uint8_t opEncoding = (m_lastOpcode >> 3) & 0b111;
+
+	uint8_t temp = 0, lastCarry = 0;	//used by shifts/rotates
+
+	switch (opEncoding)
+	{
+	case 0:	//RLCA
+	{
+		temp = (AF.high & 0b10000000) >> 7;
+		AF.high <<= 1;
+		m_setCarryFlag(temp);
+		m_setSubtractFlag(false);
+		m_setZeroFlag(false);
+		m_setHalfCarryFlag(false);
+		AF.high |= temp;
+	}
+		break;
+	case 1:	//RRCA
+	{
+		temp = (AF.high & 0b1);
+		AF.high >>= 1;
+		m_setCarryFlag(temp);
+		m_setSubtractFlag(false);
+		m_setZeroFlag(false);
+		m_setHalfCarryFlag(false);
+	}
+		break;
+	case 2:	//RLA
+	{
+		temp = (AF.high & 0b10000000) >> 7;
+		AF.high <<= 1;
+		lastCarry = m_getCarryFlag();
+		AF.high |= lastCarry;
+		m_setCarryFlag(temp);
+		m_setSubtractFlag(false);
+		m_setZeroFlag(false);
+		m_setHalfCarryFlag(false);
+	}
+		break;
+	case 3:	//RRA
+	{
+		temp = AF.high & 0b1;
+		AF.high >>= 1;
+		lastCarry = (m_getCarryFlag()) ? 0b10000000 : 0b0;
+		AF.high |= lastCarry;
+		m_setCarryFlag(temp);
+		m_setSubtractFlag(false);
+		m_setZeroFlag(false);
+		m_setHalfCarryFlag(false);
+	}
+	break;
+	case 4:
+		_DAA(); break;
+	case 5:	//CPL
+		m_setSubtractFlag(true);
+		m_setHalfCarryFlag(true);
+		AF.high = ~AF.high;
+		break;
+	case 6:	//SCF
+		m_setCarryFlag(true);
+		m_setSubtractFlag(false);
+		m_setHalfCarryFlag(false);
+		break;
+	case 7:	//CCF
+		m_setCarryFlag(!m_getCarryFlag());
+		m_setSubtractFlag(false);
+		m_setHalfCarryFlag(false);
+		break;
+	}
+}
+
+void CPU::_DAA()
+{
+	//copypasted because this instruction makes no sense
+	uint8_t correction = m_getCarryFlag() ? 0x60 : 0x00;
+
+	if (m_getHalfCarryFlag() || (!m_getSubtractFlag() && ((AF.high & 0xF) > 9)))
+		correction |= 0x06;
+	if (m_getCarryFlag() || (!m_getSubtractFlag() && (AF.high > 0x99)))
+		correction |= 0x60;
+	if (m_getSubtractFlag())
+		AF.high -= correction;
+	else
+		AF.high += correction;
+	if (((correction << 2) & 0x100) != 0)
+		m_setCarryFlag(true);
+
+	m_setHalfCarryFlag(false);
+	m_setZeroFlag(!AF.high);
 
 }
 
 void CPU::_halt()
 {
-
+	m_halted = true;
 }
 
 void CPU::_ldR8()
 {
+	uint8_t srcRegIndex = m_lastOpcode & 0b111;
+	uint8_t dstRegIndex = (m_lastOpcode >> 3) & 0b111;
 
+	setR8(dstRegIndex, getR8(srcRegIndex));
 }
 
 void CPU::_ALUOpsRegister()
 {
+	uint8_t operandRegIndex = m_lastOpcode & 0b111;
+	uint8_t op = (m_lastOpcode >> 3) & 0b111;
+	_performALUOperation(op, getR8(operandRegIndex));
+}
 
+void CPU::_performALUOperation(uint8_t op, uint8_t operand)
+{
+	bool carryIn = false, subtract = false, logical = false, isAND=false;
+	uint8_t src = AF.high;
+	switch (op)
+	{
+	case 0:
+		AF.high += operand; break;
+	case 1:
+		AF.high += operand + m_getCarryFlag();
+		carryIn = true;
+		break;
+	case 2:
+		AF.high -= operand;
+		subtract = true;
+		break;
+	case 3:
+		AF.high -= (operand + m_getCarryFlag());
+		subtract = true;
+		carryIn = true;
+		break;
+	case 4:
+		AF.high &= operand;
+		logical = true;
+		isAND = true;
+		break;
+	case 5:
+		AF.high ^= operand;
+		logical = true;
+		break;
+	case 6:
+		AF.high |= operand;
+		logical = true;
+		break;
+	case 7:
+		subtract = true;
+		break;
+	}
+
+	if (logical)
+		m_set8BitLogicalFlags(AF.high,isAND);
+	else
+		m_set8BitArithmeticFlags(src, operand, carryIn, subtract);
 }
 
 void CPU::_RETConditional()
@@ -561,7 +761,9 @@ void CPU::_callImmediate()
 
 void CPU::_ALUOpsImmediate()
 {
-
+	uint8_t immVal = m_fetch();
+	uint8_t op = (m_lastOpcode >> 3) & 0b111;
+	_performALUOperation(op, immVal);
 }
 
 void CPU::_reset()

@@ -40,6 +40,7 @@ private:
 	void m_executePrefixedInstruction(); //opcodes prefixed with 0xCB
 
 	void m_set8BitArithmeticFlags(uint8_t opA, uint8_t opB, bool carryIn, bool subtract);
+	void m_set8BitLogicalFlags(uint8_t value, bool AND);
 
 	bool m_getZeroFlag();
 	void m_setZeroFlag(bool value);
@@ -95,9 +96,11 @@ private:
 	void _decR8();
 	void _ldR8Immediate();
 	void _bitwiseOps();
+	void _DAA();
 	void _halt();
 	void _ldR8();
 	void _ALUOpsRegister();
+	void _performALUOperation(uint8_t op, uint8_t operand);
 	void _RETConditional();
 	void _storeHiImmediate();
 	void _addSPImmediate();
