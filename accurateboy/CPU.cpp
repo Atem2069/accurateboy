@@ -5,6 +5,8 @@ CPU::CPU(std::shared_ptr<Bus>& bus, std::shared_ptr<InterruptManager>& interrupt
 	m_bus = bus;
 	m_interruptManager = interruptManager;
 	m_initIO();	//init CPU and I/O registers to correct values
+	//PC = 0x100;
+	//m_bus->write(0xFF50, 1);
 }
 
 CPU::~CPU()
@@ -681,82 +683,131 @@ void CPU::_performALUOperation(uint8_t op, uint8_t operand)
 
 void CPU::_RETConditional()
 {
-
+	uint8_t conditionCode = (m_lastOpcode >> 3) & 0b11;
+	m_bus->tick();	//internal tick
+	if (checkConditionsMet(conditionCode))
+	{
+		PC = m_popFromStack();
+		m_bus->tick();	//internal tick
+	}
 }
 
 void CPU::_storeHiImmediate()
 {
-
+	uint8_t offset = m_fetch();
+	m_bus->write(0xFF00 + offset, AF.high);
 }
 
 void CPU::_addSPImmediate()
 {
-
+	int8_t val = (int8_t)m_fetch();
+	uint16_t regInitial = SP.reg;
+	SP.reg += val;
+	m_setZeroFlag(false);
+	m_setSubtractFlag(false);
+	m_setHalfCarryFlag(((regInitial ^ val ^ (SP.reg & 0xFFFF)) & 0x10) == 0x10);	//black magic 16-bit half carry
+	m_setCarryFlag(((regInitial ^ val ^ (SP.reg & 0xFFFF)) & 0x100) == 0x100);
+	m_bus->tick();	//2 internal ticks, might be wrong? gbops says two internals (i.e. SP.lower written, then SP.upper)
+	m_bus->tick();
 }
 
 void CPU::_loadHiImmediate()
 {
-
+	uint8_t offset = m_fetch();
+	AF.high = m_bus->read(0xFF00 + offset);
 }
 
 void CPU::_LDHLSPImmediate()
 {
+	uint8_t val = m_fetch();
+	int8_t offs = (int8_t)val;
 
+	uint16_t SP_temp = SP.reg;
+	SP_temp += offs;
+
+	m_setZeroFlag(false);
+	m_setSubtractFlag(false);
+
+	m_setHalfCarryFlag(((SP.reg ^ offs ^ (SP_temp & 0xFFFF)) & 0x10) == 0x10);	//black magic 16-bit half carry
+	m_setCarryFlag(((SP.reg ^ offs ^ (SP_temp & 0xFFFF)) & 0x100) == 0x100);
+
+	HL.reg = SP_temp;
+	m_bus->tick();	//internal tick
 }
 
 void CPU::_popR16()
 {
-
+	uint8_t reg = (m_lastOpcode >> 4) & 0b11;
+	setR16(reg, m_popFromStack(), 3);
 }
 
 void CPU::_miscStackOps()
 {
-
+	uint8_t op = (m_lastOpcode >> 4) & 0b11;
+	switch (op)
+	{
+	case 0b00:
+		PC = m_popFromStack();
+		m_bus->tick();	//internal
+		break;
+	case 0b01:
+		PC = m_popFromStack();
+		m_interruptManager->enableInterrupts();
+		m_bus->tick();
+		break;
+	case 0b10:
+		PC = HL.reg;
+		break;
+	case 0b11:
+		SP.reg = HL.reg;
+		m_bus->tick();	//internal
+		break;
+	}
 }
 
 void CPU::_JPConditional()
 {
-
+	Logger::getInstance()->msg(LoggerSeverity::Warn, "Not implemented");
 }
 
 void CPU::_storeHi()
 {
-
+	m_bus->write(0xFF00 + BC.low, AF.high);
 }
 
 void CPU::_storeAccumDirect()
 {
-
+	Logger::getInstance()->msg(LoggerSeverity::Warn, "Not implemented");
 }
 
 void CPU::_loadHi()
 {
-
+	AF.high = m_bus->read(0xFF00 + BC.low);
 }
 
 void CPU::_loadAccumDirect()
 {
-
+	Logger::getInstance()->msg(LoggerSeverity::Warn, "Not implemented");
 }
 
 void CPU::_miscOpsEIDI()
 {
-
+	Logger::getInstance()->msg(LoggerSeverity::Warn, "Not implemented");
 }
 
 void CPU::_callConditional()
 {
-
+	Logger::getInstance()->msg(LoggerSeverity::Warn, "Not implemented");
 }
 
 void CPU::_pushR16()
 {
-
+	Logger::getInstance()->msg(LoggerSeverity::Warn, "Not implemented");
 }
 
 void CPU::_callImmediate()
 {
-
+	Logger::getInstance()->msg(LoggerSeverity::Warn, "Not implemented");
 }
 
 void CPU::_ALUOpsImmediate()
@@ -768,7 +819,7 @@ void CPU::_ALUOpsImmediate()
 
 void CPU::_reset()
 {
-
+	Logger::getInstance()->msg(LoggerSeverity::Warn, "Not implemented");
 }
 
 void CPU::_CBShiftsRotates()
