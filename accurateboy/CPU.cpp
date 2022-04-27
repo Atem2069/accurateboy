@@ -5,8 +5,8 @@ CPU::CPU(std::shared_ptr<Bus>& bus, std::shared_ptr<InterruptManager>& interrupt
 	m_bus = bus;
 	m_interruptManager = interruptManager;
 	m_initIO();	//init CPU and I/O registers to correct values
-	//PC = 0x100;
-	//m_bus->write(0xFF50, 1);
+	PC = 0x100;
+	m_bus->write(0xFF50, 1);
 }
 
 CPU::~CPU()
@@ -55,73 +55,73 @@ void CPU::m_executeInstruction()
 	m_lastOpcode = opcode;
 	if (opcode == 0b00001000)
 		_storeSPAtAddress();
-	if (opcode == 0b00010000)
+	else if (opcode == 0b00010000)
 		_STOP();
-	if (opcode == 0b00011000)
+	else if (opcode == 0b00011000)
 		_JRUnconditional();
-	if ((opcode & 0b11100111) == 0b00100000)
+	else if ((opcode & 0b11100111) == 0b00100000)
 		_JRConditional();
-	if ((opcode & 0b11001111) == 0b00000001)
+	else if ((opcode & 0b11001111) == 0b00000001)
 		_loadR16Immediate();
-	if ((opcode & 0b11001111) == 0b00001001)
+	else if ((opcode & 0b11001111) == 0b00001001)
 		_addHLR16();
-	if ((opcode & 0b11001111) == 0b00000010)
+	else if ((opcode & 0b11001111) == 0b00000010)
 		_storeAccum();
-	if ((opcode & 0b11001111) == 0b00001010)
+	else if ((opcode & 0b11001111) == 0b00001010)
 		_loadAccum();
-	if ((opcode & 0b11001111) == 0b00000011)
+	else if ((opcode & 0b11001111) == 0b00000011)
 		_incR16();
-	if ((opcode & 0b11001111) == 0b00001011)
+	else if ((opcode & 0b11001111) == 0b00001011)
 		_decR16();
-	if ((opcode & 0b11000111) == 0b00000100)
+	else if ((opcode & 0b11000111) == 0b00000100)
 		_incR8();
-	if ((opcode & 0b11000111) == 0b00000101)
+	else if ((opcode & 0b11000111) == 0b00000101)
 		_decR8();
-	if ((opcode & 0b11000111) == 0b00000110)
+	else if ((opcode & 0b11000111) == 0b00000110)
 		_ldR8Immediate();
-	if ((opcode & 0b11000111) == 0b00000111)
+	else if ((opcode & 0b11000111) == 0b00000111)
 		_bitwiseOps();
-	if (opcode == 0b01110110)
+	else if (opcode == 0b01110110)
 		_halt();
-	if ((opcode & 0b11000000) == 0b01000000)
+	else if ((opcode & 0b11000000) == 0b01000000)
 		_ldR8();
-	if ((opcode & 0b11000000) == 0b10000000)
+	else if ((opcode & 0b11000000) == 0b10000000)
 		_ALUOpsRegister();
-	if ((opcode & 0b11100111) == 0b11000000)
+	else if ((opcode & 0b11100111) == 0b11000000)
 		_RETConditional();
-	if (opcode == 0b11100000)
+	else if (opcode == 0b11100000)
 		_storeHiImmediate();
-	if (opcode == 0b11101000)
+	else if (opcode == 0b11101000)
 		_addSPImmediate();
-	if (opcode == 0b11110000)
+	else if (opcode == 0b11110000)
 		_loadHiImmediate();
-	if (opcode == 0b11111000)
+	else if (opcode == 0b11111000)
 		_LDHLSPImmediate();
-	if ((opcode & 0b11001111) == 0b11000001)
+	else if ((opcode & 0b11001111) == 0b11000001)
 		_popR16();
-	if ((opcode & 0b11001111) == 0b11001001)
+	else if ((opcode & 0b11001111) == 0b11001001)
 		_miscStackOps();
-	if ((opcode & 0b11100111) == 0b11000010)
+	else if ((opcode & 0b11100111) == 0b11000010)
 		_JPConditional();
-	if (opcode == 0b11100010)
+	else if (opcode == 0b11100010)
 		_storeHi();
-	if (opcode == 0b11101010)
+	else if (opcode == 0b11101010)
 		_storeAccumDirect();
-	if (opcode == 0b11110010)
+	else if (opcode == 0b11110010)
 		_loadHi();
-	if (opcode == 0b11111010)
+	else if (opcode == 0b11111010)
 		_loadAccumDirect();
-	if ((opcode & 0b11000111) == 0b11000011)
+	else if ((opcode & 0b11000111) == 0b11000011)
 		_miscOpsEIDI();
-	if ((opcode & 0b11100111) == 0b11000100)
+	else if ((opcode & 0b11100111) == 0b11000100)
 		_callConditional();
-	if ((opcode & 0b11001111) == 0b11000101)
+	else if ((opcode & 0b11001111) == 0b11000101)
 		_pushR16();
-	if (opcode == 0b11001101)
+	else if (opcode == 0b11001101)
 		_callImmediate();
-	if ((opcode & 0b11000111) == 0b11000110)
+	else if ((opcode & 0b11000111) == 0b11000110)
 		_ALUOpsImmediate();
-	if ((opcode & 0b11000111) == 0b11000111)
+	else if ((opcode & 0b11000111) == 0b11000111)
 		_reset();
 }
 
@@ -129,6 +129,7 @@ void CPU::m_executePrefixedInstruction()
 {
 	uint8_t opcode = m_fetch();
 	m_lastOpcode = opcode;
+
 	switch (opcode & 0b11000000)
 	{
 	case 0b00000000:
@@ -202,6 +203,21 @@ void CPU::m_set8BitArithmeticFlags(uint8_t opA, uint8_t opB, bool carryIn, bool 
 
 	if (subtract)
 	{
+		m_setCarryFlag(opA < (opB + carryInVal));
+		m_setHalfCarryFlag(((opA & 0xf) - (opB & 0xf) - (carryInVal & 0xf)) & 0x10);
+		m_setSubtractFlag(true);
+		m_setZeroFlag((opA-(opB+carryInVal))==0);
+	}
+	else
+	{
+		m_setHalfCarryFlag(((opA & 0x0F) + (opB & 0x0F) + (carryInVal & 0x0F)) > 0x0F);
+		m_setCarryFlag(((int)opA + (int)opB + (int)carryInVal) > 0xFF);
+		m_setSubtractFlag(false);
+		m_setZeroFlag((opA+opB+carryInVal)==0);
+	}
+
+	/*if (subtract)
+	{
 		opB = ~(opB)+1;
 		carryInVal = ~(carryInVal)+1;
 	}
@@ -210,8 +226,8 @@ void CPU::m_set8BitArithmeticFlags(uint8_t opA, uint8_t opB, bool carryIn, bool 
 	m_setSubtractFlag(subtract);
 	m_setHalfCarryFlag(((opA & 0xF) + (opB & 0xF) + (carryInVal & 0xF)) > 0xF);
 	m_setCarryFlag((opA + opB + carryIn) < opA);	//double check this
-	if (subtract)
-		m_setCarryFlag(!m_getCarryFlag());			//double check this too
+	//if (subtract)
+	//	m_setCarryFlag(!m_getCarryFlag());			//double check this too*/
 }
 
 void CPU::m_set8BitLogicalFlags(uint8_t value, bool AND)
@@ -767,7 +783,16 @@ void CPU::_miscStackOps()
 
 void CPU::_JPConditional()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Warn, "Not implemented");
+	uint8_t low = m_fetch();
+	uint8_t high = m_fetch();
+	uint16_t addr = (high << 8) | low;
+
+	uint8_t conditionCode = (m_lastOpcode >> 3) & 0b11;
+	if (checkConditionsMet(conditionCode))
+	{
+		PC = addr;
+		m_bus->tick();	//internal tick
+	}
 }
 
 void CPU::_storeHi()
@@ -777,7 +802,10 @@ void CPU::_storeHi()
 
 void CPU::_storeAccumDirect()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Warn, "Not implemented");
+	uint8_t low = m_fetch();
+	uint8_t high = m_fetch();
+	uint16_t addr = (high << 8) | low;
+	m_bus->write(addr, AF.high);
 }
 
 void CPU::_loadHi()
@@ -787,27 +815,70 @@ void CPU::_loadHi()
 
 void CPU::_loadAccumDirect()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Warn, "Not implemented");
+	uint8_t low = m_fetch();
+	uint8_t high = m_fetch();
+	uint16_t addr = (high << 8) | low;
+	AF.high = m_bus->read(addr);
 }
 
 void CPU::_miscOpsEIDI()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Warn, "Not implemented");
+	uint8_t op = (m_lastOpcode >> 3) & 0b111;
+	if (op == 0)	//JP u16
+	{
+		uint8_t low = m_fetch();
+		uint8_t high = m_fetch();
+		uint16_t addr = (high << 8) | low;
+		PC = addr;
+		m_bus->tick();
+	}
+	else if (op == 1)	//CB
+	{
+		m_executePrefixedInstruction();
+	}
+	else if (op == 6)	//DI
+	{
+		m_interruptManager->disableInterrupts();
+	}
+	else if (op == 7)	//EI
+	{
+		if (!m_EIRequested)
+			m_instrSinceEI = 0;
+		m_EIRequested = true;
+	}
+	else
+		Logger::getInstance()->msg(LoggerSeverity::Error, "Invalid opcode");
 }
 
 void CPU::_callConditional()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Warn, "Not implemented");
+	uint8_t low = m_fetch();
+	uint8_t high = m_fetch();
+	uint16_t addr = (high << 8) | low;
+	uint8_t conditionCode = (m_lastOpcode >> 3) & 0b11;
+	if (checkConditionsMet(conditionCode))
+	{
+		m_bus->tick();	//internal branch decision
+		m_pushToStack(PC);
+		PC = addr;
+	}
 }
 
 void CPU::_pushR16()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Warn, "Not implemented");
+	uint8_t regIndex = (m_lastOpcode >> 4) & 0b11;
+	m_bus->tick();	//internal
+	m_pushToStack(getR16(regIndex, 3));
 }
 
 void CPU::_callImmediate()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Warn, "Not implemented");
+	uint8_t low = m_fetch();
+	uint8_t high = m_fetch();
+	uint16_t addr = (high << 8) | low;
+	m_bus->tick();	//internal tick
+	m_pushToStack(PC);
+	PC = addr;
 }
 
 void CPU::_ALUOpsImmediate()
@@ -819,25 +890,168 @@ void CPU::_ALUOpsImmediate()
 
 void CPU::_reset()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Warn, "Not implemented");
+	uint8_t resetVector = (m_lastOpcode >> 3) & 0b111;
+	resetVector *= 8;
+	m_bus->tick();
+	m_pushToStack(PC);
+	PC = resetVector;
 }
 
 void CPU::_CBShiftsRotates()
 {
-
+	uint8_t op = (m_lastOpcode >> 3) & 0b111;
+	switch (op)
+	{
+	case 0:
+		_RLC(); break;
+	case 1:
+		_RRC(); break;
+	case 2:
+		_RL(); break;
+	case 3:
+		_RR(); break;
+	case 4:
+		_SLA(); break;
+	case 5:
+		_SRA(); break;
+	case 6:
+		_SWAP(); break;
+	case 7:
+		_SRL(); break;
+	}
 }
 
 void CPU::_CBGetBitComplement()
 {
-
+	Logger::getInstance()->msg(LoggerSeverity::Warn, "Not implemented");
 }
 
 void CPU::_CBResetBit()
 {
-
+	Logger::getInstance()->msg(LoggerSeverity::Warn, "Not implemented");
 }
 
 void CPU::_CBSetBit()
 {
-
+	Logger::getInstance()->msg(LoggerSeverity::Warn, "Not implemented");
 }
+
+
+void CPU::_RL()
+{
+	uint8_t regIdx = m_lastOpcode & 0b111;
+	uint8_t reg = getR8(regIdx);
+
+	uint8_t msb = (reg & 0b10000000) >> 7;
+	uint8_t lastCarry = (m_getCarryFlag()) ? 0b00000001 : 0b0;
+	reg <<= 1;
+	reg |= lastCarry;
+	m_setZeroFlag(!reg);
+	m_setCarryFlag(msb);
+	m_setSubtractFlag(false);
+	m_setHalfCarryFlag(false);
+	setR8(regIdx, reg);
+}
+
+void CPU::_RLC()
+{
+	uint8_t regIdx = m_lastOpcode & 0b111;
+	uint8_t reg = getR8(regIdx);
+	uint8_t msb = (reg & 0b10000000) >> 7;
+	reg <<= 1;
+	reg |= msb;
+	m_setCarryFlag(msb);
+	m_setZeroFlag(!reg);
+	m_setSubtractFlag(false);
+	m_setHalfCarryFlag(false);
+	setR8(regIdx, reg);
+}
+
+
+void CPU::_RR()
+{
+	uint8_t regIdx = m_lastOpcode & 0b111;
+	uint8_t reg = getR8(regIdx);
+	uint8_t lsb = (reg & 0b00000001);
+	reg >>= 1;
+	uint8_t m_lastCarry = (m_getCarryFlag()) ? 0b10000000 : 0b0;
+	reg |= m_lastCarry;
+	m_setZeroFlag(!reg);
+	m_setCarryFlag(lsb);
+	m_setSubtractFlag(false);
+	m_setHalfCarryFlag(false);
+	setR8(regIdx, reg);
+}
+
+void CPU::_RRC()
+{
+	uint8_t regIdx = m_lastOpcode & 0b111;
+	uint8_t reg = getR8(regIdx);
+	uint8_t lsb = (reg & 0b00000001);
+	reg >>= 1;
+	m_setCarryFlag(lsb);
+	reg |= (lsb << 7);
+	m_setZeroFlag(!reg);
+	m_setSubtractFlag(false);
+	m_setHalfCarryFlag(false);
+	setR8(regIdx, reg);
+}
+
+void CPU::_SLA()
+{
+	uint8_t regIdx = m_lastOpcode & 0b111;
+	uint8_t reg = getR8(regIdx);
+	uint8_t msb = (reg & 0b10000000) >> 7;
+	reg <<= 1;
+	m_setZeroFlag(!reg);
+	m_setCarryFlag(msb);
+	m_setSubtractFlag(false);
+	m_setHalfCarryFlag(false);
+	setR8(regIdx, reg);
+}
+
+void CPU::_SRA()
+{
+	uint8_t regIdx = m_lastOpcode & 0b111;
+	uint8_t reg = getR8(regIdx);
+	uint8_t lsb = (reg & 0b00000001);
+	uint8_t msb = (reg & 0b10000000);
+	reg >>= 1;
+	reg |= msb;
+	m_setZeroFlag(!reg);
+	m_setCarryFlag(lsb);
+	m_setSubtractFlag(false);
+	m_setHalfCarryFlag(false);
+	setR8(regIdx, reg);
+}
+
+
+void CPU::_SRL()
+{
+	uint8_t regIdx = m_lastOpcode & 0b111;
+	uint8_t reg = getR8(regIdx);
+	uint8_t lsb = (reg & 0b00000001);
+	reg >>= 1;
+	m_setZeroFlag(!reg);
+	m_setCarryFlag(lsb);
+	m_setSubtractFlag(false);
+	m_setHalfCarryFlag(false);
+	setR8(regIdx, reg);
+}
+
+void CPU::_SWAP()
+{
+	uint8_t regIdx = m_lastOpcode & 0b111;
+	uint8_t reg = getR8(regIdx);
+	uint8_t low = (reg & 0x0F) << 4;
+	uint8_t high = (reg & 0xF0) >> 4;
+
+	reg = low | high;
+
+	m_setZeroFlag(!reg);
+	m_setSubtractFlag(false);
+	m_setHalfCarryFlag(false);
+	m_setCarryFlag(false);
+	setR8(regIdx, reg);
+}
+

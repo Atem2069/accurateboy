@@ -124,4 +124,13 @@ private:
 	void _CBGetBitComplement();
 	void _CBResetBit();
 	void _CBSetBit();
+
+	void _RLC();
+	void _RRC();
+	void _RL();
+	void _RR();
+	void _SLA();
+	void _SRA();
+	void _SWAP();
+	void _SRL();
 };
