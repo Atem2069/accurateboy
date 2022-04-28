@@ -5,8 +5,8 @@ CPU::CPU(std::shared_ptr<Bus>& bus, std::shared_ptr<InterruptManager>& interrupt
 	m_bus = bus;
 	m_interruptManager = interruptManager;
 	m_initIO();	//init CPU and I/O registers to correct values
-	PC = 0x100;
-	m_bus->write(0xFF50, 1);
+	//PC = 0x100;
+	//m_bus->write(0xFF50, 1);
 }
 
 CPU::~CPU()
@@ -523,12 +523,13 @@ void CPU::_decR8()
 {
 	uint8_t regIndex = (m_lastOpcode >> 3) & 0b111;
 	uint8_t regContents = getR8(regIndex);
+	regContents--;
 
-	m_setZeroFlag(regContents == 0x1);
+	m_setZeroFlag(!regContents);
 	m_setSubtractFlag(true);
-	m_setHalfCarryFlag((regContents & 0xF) == 0xF);
+	m_setHalfCarryFlag((regContents & 0x0f) == 0x0f);
 
-	setR8(regIndex, regContents - 1);
+	setR8(regIndex, regContents);
 }
 
 void CPU::_ldR8Immediate()
@@ -565,6 +566,7 @@ void CPU::_bitwiseOps()
 		m_setSubtractFlag(false);
 		m_setZeroFlag(false);
 		m_setHalfCarryFlag(false);
+		AF.high |= (temp << 7);
 	}
 		break;
 	case 2:	//RLA
@@ -926,17 +928,40 @@ void CPU::_CBShiftsRotates()
 
 void CPU::_CBGetBitComplement()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Warn, "Not implemented");
+	uint8_t regIdx = m_lastOpcode & 0b111;
+	uint8_t bitIdx = (m_lastOpcode >> 3) & 0b111;
+
+	uint8_t regContents = getR8(regIdx);
+
+	uint8_t bit = (regContents >> bitIdx) & 0b1;
+	m_setZeroFlag(!bit);
+	m_setSubtractFlag(false);
+	m_setHalfCarryFlag(true);
+
 }
 
 void CPU::_CBResetBit()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Warn, "Not implemented");
+	uint8_t regIdx = m_lastOpcode & 0b111;
+	uint8_t bitIdx = (m_lastOpcode >> 3) & 0b111;
+
+	uint8_t regContents = getR8(regIdx);
+
+	uint8_t mask = ~(1 << bitIdx);
+	regContents &= mask;
+	setR8(regIdx, regContents);
 }
 
 void CPU::_CBSetBit()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Warn, "Not implemented");
+	uint8_t regIdx = m_lastOpcode & 0b111;
+	uint8_t bitIdx = (m_lastOpcode >> 3) & 0b111;
+
+	uint8_t regContents = getR8(regIdx);
+
+	uint8_t mask = (1 << bitIdx);
+	regContents |= mask;
+	setR8(regIdx, regContents);
 }
 
 
