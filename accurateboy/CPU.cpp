@@ -53,76 +53,155 @@ void CPU::m_executeInstruction()
 {
 	uint8_t opcode = m_fetch();
 	m_lastOpcode = opcode;
-	if (opcode == 0b00001000)
-		_storeSPAtAddress();
-	else if (opcode == 0b00010000)
-		_STOP();
-	else if (opcode == 0b00011000)
-		_JRUnconditional();
-	else if ((opcode & 0b11100111) == 0b00100000)
-		_JRConditional();
-	else if ((opcode & 0b11001111) == 0b00000001)
-		_loadR16Immediate();
-	else if ((opcode & 0b11001111) == 0b00001001)
-		_addHLR16();
-	else if ((opcode & 0b11001111) == 0b00000010)
-		_storeAccum();
-	else if ((opcode & 0b11001111) == 0b00001010)
-		_loadAccum();
-	else if ((opcode & 0b11001111) == 0b00000011)
-		_incR16();
-	else if ((opcode & 0b11001111) == 0b00001011)
-		_decR16();
-	else if ((opcode & 0b11000111) == 0b00000100)
-		_incR8();
-	else if ((opcode & 0b11000111) == 0b00000101)
-		_decR8();
-	else if ((opcode & 0b11000111) == 0b00000110)
-		_ldR8Immediate();
-	else if ((opcode & 0b11000111) == 0b00000111)
-		_bitwiseOps();
-	else if (opcode == 0b01110110)
-		_halt();
-	else if ((opcode & 0b11000000) == 0b01000000)
-		_ldR8();
-	else if ((opcode & 0b11000000) == 0b10000000)
-		_ALUOpsRegister();
-	else if ((opcode & 0b11100111) == 0b11000000)
-		_RETConditional();
-	else if (opcode == 0b11100000)
-		_storeHiImmediate();
-	else if (opcode == 0b11101000)
-		_addSPImmediate();
-	else if (opcode == 0b11110000)
-		_loadHiImmediate();
-	else if (opcode == 0b11111000)
-		_LDHLSPImmediate();
-	else if ((opcode & 0b11001111) == 0b11000001)
-		_popR16();
-	else if ((opcode & 0b11001111) == 0b11001001)
-		_miscStackOps();
-	else if ((opcode & 0b11100111) == 0b11000010)
-		_JPConditional();
-	else if (opcode == 0b11100010)
-		_storeHi();
-	else if (opcode == 0b11101010)
-		_storeAccumDirect();
-	else if (opcode == 0b11110010)
-		_loadHi();
-	else if (opcode == 0b11111010)
-		_loadAccumDirect();
-	else if ((opcode & 0b11000111) == 0b11000011)
-		_miscOpsEIDI();
-	else if ((opcode & 0b11100111) == 0b11000100)
-		_callConditional();
-	else if ((opcode & 0b11001111) == 0b11000101)
-		_pushR16();
-	else if (opcode == 0b11001101)
-		_callImmediate();
-	else if ((opcode & 0b11000111) == 0b11000110)
-		_ALUOpsImmediate();
-	else if ((opcode & 0b11000111) == 0b11000111)
-		_reset();
+	int debug_timesOpcodeSeen = 0;
+	if (opcode == 0)
+	{
+		std::cout << "nop" << '\n';
+		return;
+	}
+	if (opcode == 0b0000'1000)
+	{
+		_storeSPAtAddress(); return;
+	}
+	if (opcode == 0b0001'0000)
+	{
+		_STOP(); return;
+	}
+	if (opcode == 0b0001'1000)
+	{
+		_JRUnconditional(); return;
+	}
+	if ((opcode & 0b1110'0111) == 0b0010'0000)
+	{
+		_JRConditional(); return;
+	}
+	if ((opcode & 0b1100'1111) == 0b0000'0001)
+	{
+		_loadR16Immediate(); return;
+	}
+	if ((opcode & 0b1100'1111) == 0b0000'1001)
+	{
+		_addHLR16(); return;
+	}
+	if ((opcode & 0b1100'1111) == 0b0000'0010)
+	{
+		_storeAccum(); return;
+	}
+	if ((opcode & 0b1100'1111) == 0b0000'1010)
+	{
+		_loadAccum(); return;
+	}
+	if ((opcode & 0b1100'1111) == 0b0000'0011)
+	{
+		_incR16(); return;
+	}
+	if ((opcode & 0b1100'1111) == 0b0000'1011)
+	{
+		_decR16(); return;
+	}
+	if ((opcode & 0b1100'0111) == 0b0000'0100)
+	{
+		_incR8(); return;
+	}
+	if ((opcode & 0b1100'0111) == 0b0000'0101)
+	{
+		_decR8(); return;
+	}
+	if ((opcode & 0b1100'0111) == 0b0000'0110)
+	{
+		_ldR8Immediate(); return;
+	}
+	if ((opcode & 0b1100'0111) == 0b0000'0111)
+	{
+		_bitwiseOps(); return;
+	}
+	if ((opcode & 0b1100'0000) == 0b0100'0000)
+	{
+		_ldR8(); return;
+	}
+	if ((opcode & 0b1100'0000) == 0b1000'0000)
+	{
+		_ALUOpsRegister(); return;
+	}
+	if ((opcode & 0b1110'0111) == 0b11000000)
+	{
+		_RETConditional(); return;
+	}
+	if (opcode == 0b1110'0000)
+	{
+		_storeHiImmediate(); return;
+	}
+	if (opcode == 0b1110'1000)
+	{
+		_addSPImmediate(); return;
+	}
+	if (opcode == 0b1111'0000)
+	{
+		_loadHiImmediate(); return;
+	}
+	if (opcode == 0b1111'1000)
+	{
+		_LDHLSPImmediate(); return;
+	}
+	if ((opcode & 0b1100'1111) == 0b1100'0001)
+	{
+		_popR16(); return;
+	}
+	if ((opcode & 0b1100'1111) == 0b1100'1001)
+	{
+		_miscStackOps(); return;
+	}
+	if ((opcode & 0b1110'0111) == 0b1100'0010)
+	{
+		_JPConditional(); return;
+	}
+	if (opcode == 0b1110'0010)
+	{
+		_storeHi(); return;
+	}
+	if (opcode == 0b1110'1010)
+	{
+		_storeAccumDirect(); return;
+	}
+	if (opcode == 0b1111'0010)
+	{
+		_loadHi(); return;
+	}
+	if (opcode == 0b1111'1010)
+	{
+		_loadAccumDirect(); return;
+	}
+	if (((opcode & 0b1100'0111) == 0b1100'0011) && opcode != 0xCB)
+	{
+		_miscOpsEIDI(); return;
+	}
+	if (opcode == 0xCB)
+	{
+		m_executePrefixedInstruction(); return;
+	}
+	if ((opcode & 0b1110'0111) == 0b1100'0100)
+	{
+		_callConditional(); return;
+	}
+	if ((opcode & 0b1100'1111) == 0b1100'0101)
+	{
+		_pushR16(); return;
+	}
+	if (opcode == 0b1100'1101)
+	{
+		_callImmediate(); return;
+	}
+	if ((opcode & 0b1100'0111) == 0b1100'0110)
+	{
+		_ALUOpsImmediate(); return;
+	}
+	if ((opcode & 0b1100'0111) == 0b1100'0111)
+	{
+		_reset(); return;
+	}
+
+	if (debug_timesOpcodeSeen > 1)
+		std::cout << std::hex << (int)opcode << " " << debug_timesOpcodeSeen << '\n';
 }
 
 void CPU::m_executePrefixedInstruction()
@@ -641,6 +720,11 @@ void CPU::_halt()
 
 void CPU::_ldR8()
 {
+	if (m_lastOpcode == 0b01110110)	//ld where src = dst = 0b110 is a halt, not a ld instruction!!
+	{
+		_halt();
+		return;
+	}
 	uint8_t srcRegIndex = m_lastOpcode & 0b111;
 	uint8_t dstRegIndex = (m_lastOpcode >> 3) & 0b111;
 
@@ -712,7 +796,7 @@ void CPU::_RETConditional()
 
 void CPU::_storeHiImmediate()
 {
-	uint8_t offset = m_fetch();
+	uint16_t offset = m_fetch();
 	m_bus->write(0xFF00 + offset, AF.high);
 }
 
@@ -731,7 +815,7 @@ void CPU::_addSPImmediate()
 
 void CPU::_loadHiImmediate()
 {
-	uint8_t offset = m_fetch();
+	uint16_t offset = m_fetch();
 	AF.high = m_bus->read(0xFF00 + offset);
 }
 
@@ -839,7 +923,7 @@ void CPU::_miscOpsEIDI()
 	}
 	else if (op == 1)	//CB
 	{
-		m_executePrefixedInstruction();
+		Logger::getInstance()->msg(LoggerSeverity::Error, "CB handler shouldn't be called here");
 	}
 	else if (op == 6)	//DI
 	{
@@ -895,7 +979,7 @@ void CPU::_ALUOpsImmediate()
 
 void CPU::_reset()
 {
-	uint8_t resetVector = (m_lastOpcode >> 3) & 0b111;
+	uint16_t resetVector = (m_lastOpcode >> 3) & 0b111;
 	resetVector *= 8;
 	m_bus->tick();
 	m_pushToStack(PC);
