@@ -206,14 +206,14 @@ void CPU::m_set8BitArithmeticFlags(uint8_t opA, uint8_t opB, bool carryIn, bool 
 		m_setCarryFlag(opA < (opB + carryInVal));
 		m_setHalfCarryFlag(((opA & 0xf) - (opB & 0xf) - (carryInVal & 0xf)) & 0x10);
 		m_setSubtractFlag(true);
-		m_setZeroFlag((opA-(opB+carryInVal))==0);
+		m_setZeroFlag((uint8_t)(opA-(opB+carryInVal))==0);
 	}
 	else
 	{
 		m_setHalfCarryFlag(((opA & 0x0F) + (opB & 0x0F) + (carryInVal & 0x0F)) > 0x0F);
 		m_setCarryFlag(((int)opA + (int)opB + (int)carryInVal) > 0xFF);
 		m_setSubtractFlag(false);
-		m_setZeroFlag((opA+opB+carryInVal)==0);
+		m_setZeroFlag((uint8_t)(opA+opB+carryInVal)==0);
 	}
 
 	/*if (subtract)
@@ -413,7 +413,7 @@ void CPU::_storeSPAtAddress()
 	uint8_t higher = m_fetch();
 	uint16_t addr = (higher << 8) | lower;
 	m_bus->write(addr, SP.low);
-	m_bus->write(addr, SP.high);
+	m_bus->write(addr+1, SP.high);
 }
 
 void CPU::_STOP()
@@ -754,7 +754,10 @@ void CPU::_LDHLSPImmediate()
 void CPU::_popR16()
 {
 	uint8_t reg = (m_lastOpcode >> 4) & 0b11;
-	setR16(reg, m_popFromStack(), 3);
+	uint16_t val = m_popFromStack();
+	if (reg == 3)
+		val &= 0b1111111111110000;
+	setR16(reg, val, 3);
 }
 
 void CPU::_miscStackOps()
