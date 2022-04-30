@@ -57,10 +57,14 @@ Highly accurate Game Boy emulator, with a T-Cycle accurate Pixel FIFO implementa
 | unused_hwio-GS | :heavy_check_mark: |
 
 ### instr
- - [x] daa
+| Name | Pass? |
+| -----|------ |
+| daa | :heavy_check_mark: |
 
 ### interrupts
- - [ ] ie_push (R3: unwanted cancel)
+| Name | Pass? |
+| -----|------ |
+| ie_push | :heavy_check_mark: |
 
 ### OAM DMA
 | Name | Pass? |
