@@ -16,21 +16,8 @@ CPU::~CPU()
 
 void CPU::step()
 {
-	InterruptType queuedInt = m_interruptManager->getActiveInterrupt(false);
-	if (queuedInt != InterruptType::None)
-	{
-		if (m_interruptManager->getInterruptsEnabled())
-		{
-			m_bus->tick();
-			m_bus->tick();
-			m_pushToStack(PC);
-			queuedInt = m_interruptManager->getActiveInterrupt(true);	//IF&IE may change in interrupt processing, so check again. if this ends up being 0 the cpu actually jumps to 0
-			m_interruptManager->disableInterrupts();
-			PC = (uint16_t)queuedInt;
-			m_bus->tick();
-		}
-		m_halted = false;
-	}
+	if (m_interruptManager->getActiveInterrupt(false) != InterruptType::None)
+		m_dispatchInterrupt();
 
 	m_lastPC = PC;
 	if (!m_halted)
@@ -47,6 +34,25 @@ void CPU::step()
 			m_interruptManager->enableInterrupts();
 		}
 	}
+}
+
+void CPU::m_dispatchInterrupt()
+{
+	if (m_interruptManager->getInterruptsEnabled())
+	{
+		m_bus->tick();
+		m_bus->tick();
+
+		//would be nice to use 'm_pushToStack' here, however the interrupt dispatch timing dictates that the interrupt dispatch can't be cancelled after the high byte push
+		m_bus->write(SP.reg - 1, ((PC & 0xFF00) >> 8));
+		InterruptType queuedInt = m_interruptManager->getActiveInterrupt(true);	//after writing high byte, check interrupts again
+		m_bus->write(SP.reg - 2, PC & 0xFF);
+		SP.reg -= 2;
+		m_interruptManager->disableInterrupts();
+		PC = (uint16_t)queuedInt;
+		m_bus->tick();
+	}
+	m_halted = false;
 }
 
 void CPU::m_executeInstruction()

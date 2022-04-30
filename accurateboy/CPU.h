@@ -31,7 +31,7 @@ public:
 	bool getInDoubleSpeedMode();
 
 private:
-
+	void m_dispatchInterrupt();
 	uint8_t m_fetch();
 
 	void m_initIO();
