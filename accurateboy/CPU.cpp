@@ -56,7 +56,6 @@ void CPU::m_executeInstruction()
 	int debug_timesOpcodeSeen = 0;
 	if (opcode == 0)
 	{
-		std::cout << "nop" << '\n';
 		return;
 	}
 	if (opcode == 0b0000'1000)
@@ -504,6 +503,7 @@ void CPU::_JRUnconditional()
 {
 	int8_t offset = (int8_t)m_fetch();
 	PC += offset;
+	m_bus->tick();
 }
 
 void CPU::_JRConditional()
@@ -511,7 +511,10 @@ void CPU::_JRConditional()
 	int8_t offset = (int8_t)m_fetch();				//instruction still takes 8 t-cycles if branch not taken
 	uint8_t condition = (m_lastOpcode >> 3) & 0b11;
 	if (checkConditionsMet(condition))
+	{
 		PC += offset;
+		m_bus->tick();
+	}
 }
 
 void CPU::_loadR16Immediate()
