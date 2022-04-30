@@ -53,154 +53,81 @@ void CPU::m_executeInstruction()
 {
 	uint8_t opcode = m_fetch();
 	m_lastOpcode = opcode;
-	int debug_timesOpcodeSeen = 0;
 	if (opcode == 0)
-	{
 		return;
-	}
 	if (opcode == 0b0000'1000)
-	{
-		_storeSPAtAddress(); debug_timesOpcodeSeen++;
-	}
+		_storeSPAtAddress();
 	if (opcode == 0b0001'0000)
-	{
-		_STOP(); debug_timesOpcodeSeen++;
-	}
+		_STOP(); 
 	if (opcode == 0b0001'1000)
-	{
-		_JRUnconditional(); debug_timesOpcodeSeen++;
-	}
+		_JRUnconditional(); 
 	if ((opcode & 0b1110'0111) == 0b0010'0000)
-	{
-		_JRConditional(); debug_timesOpcodeSeen++;
-	}
+		_JRConditional(); 
 	if ((opcode & 0b1100'1111) == 0b0000'0001)
-	{
-		_loadR16Immediate(); debug_timesOpcodeSeen++;
-	}
+		_loadR16Immediate(); 
 	if ((opcode & 0b1100'1111) == 0b0000'1001)
-	{
-		_addHLR16(); debug_timesOpcodeSeen++;
-	}
+		_addHLR16(); 
 	if ((opcode & 0b1100'1111) == 0b0000'0010)
-	{
-		_storeAccum(); debug_timesOpcodeSeen++;
-	}
+		_storeAccum();
 	if ((opcode & 0b1100'1111) == 0b0000'1010)
-	{
-		_loadAccum(); debug_timesOpcodeSeen++;
-	}
+		_loadAccum();
 	if ((opcode & 0b1100'1111) == 0b0000'0011)
-	{
-		_incR16(); debug_timesOpcodeSeen++;
-	}
+		_incR16(); 
 	if ((opcode & 0b1100'1111) == 0b0000'1011)
-	{
-		_decR16(); debug_timesOpcodeSeen++;
-	}
+		_decR16(); 
 	if ((opcode & 0b1100'0111) == 0b0000'0100)
-	{
-		_incR8(); debug_timesOpcodeSeen++;
-	}
+		_incR8();
 	if ((opcode & 0b1100'0111) == 0b0000'0101)
-	{
-		_decR8(); debug_timesOpcodeSeen++;
-	}
+		_decR8(); 
 	if ((opcode & 0b1100'0111) == 0b0000'0110)
-	{
-		_ldR8Immediate(); debug_timesOpcodeSeen++;
-	}
+		_ldR8Immediate(); 
 	if ((opcode & 0b1100'0111) == 0b0000'0111)
-	{
-		_bitwiseOps(); debug_timesOpcodeSeen++;
-	}
+		_bitwiseOps(); 
 	if ((opcode & 0b1100'0000) == 0b0100'0000)
-	{
-		_ldR8(); debug_timesOpcodeSeen++;
-	}
+		_ldR8(); 
 	if ((opcode & 0b1100'0000) == 0b1000'0000)
-	{
-		_ALUOpsRegister(); debug_timesOpcodeSeen++;
-	}
+		_ALUOpsRegister(); 
 	if ((opcode & 0b1110'0111) == 0b11000000)
-	{
-		_RETConditional(); debug_timesOpcodeSeen++;
-	}
+		_RETConditional();
 	if (opcode == 0b1110'0000)
-	{
-		_storeHiImmediate(); debug_timesOpcodeSeen++;
-	}
+		_storeHiImmediate(); 
 	if (opcode == 0b1110'1000)
-	{
-		_addSPImmediate(); debug_timesOpcodeSeen++;
-	}
+		_addSPImmediate();
 	if (opcode == 0b1111'0000)
-	{
-		_loadHiImmediate(); debug_timesOpcodeSeen++;
-	}
+		_loadHiImmediate(); 
 	if (opcode == 0b1111'1000)
-	{
-		_LDHLSPImmediate(); debug_timesOpcodeSeen++;
-	}
+		_LDHLSPImmediate();
 	if ((opcode & 0b1100'1111) == 0b1100'0001)
-	{
-		_popR16(); debug_timesOpcodeSeen++;
-	}
+		_popR16(); 
 	if ((opcode & 0b1100'1111) == 0b1100'1001)
-	{
-		_miscStackOps(); debug_timesOpcodeSeen++;
-	}
+		_miscStackOps(); 
 	if ((opcode & 0b1110'0111) == 0b1100'0010)
-	{
-		_JPConditional(); debug_timesOpcodeSeen++;
-	}
+		_JPConditional(); 
 	if (opcode == 0b1110'0010)
-	{
-		_storeHi(); debug_timesOpcodeSeen++;
-	}
+		_storeHi(); 
 	if (opcode == 0b1110'1010)
-	{
-		_storeAccumDirect(); debug_timesOpcodeSeen++;
-	}
+		_storeAccumDirect(); 
 	if (opcode == 0b1111'0010)
-	{
-		_loadHi(); debug_timesOpcodeSeen++;
-	}
+		_loadHi(); 
 	if (opcode == 0b1111'1010)
-	{
-		_loadAccumDirect(); debug_timesOpcodeSeen++;
-	}
+		_loadAccumDirect(); 
 	if (((opcode & 0b1100'0111) == 0b1100'0011) && opcode != 0xCB)
-	{
-		_miscOpsEIDI(); debug_timesOpcodeSeen++;
-	}
+		_miscOpsEIDI(); 
 	if (opcode == 0xCB)
 	{
-		m_executePrefixedInstruction(); debug_timesOpcodeSeen++;
+		m_executePrefixedInstruction();
+		return;
 	}
 	if ((opcode & 0b1110'0111) == 0b1100'0100)
-	{
-		_callConditional(); debug_timesOpcodeSeen++;
-	}
+		_callConditional(); 
 	if ((opcode & 0b1100'1111) == 0b1100'0101)
-	{
-		_pushR16(); debug_timesOpcodeSeen++;
-	}
+		_pushR16();
 	if (opcode == 0b1100'1101)
-	{
-		_callImmediate(); debug_timesOpcodeSeen++;
-	}
+		_callImmediate();
 	if ((opcode & 0b1100'0111) == 0b1100'0110)
-	{
-		_ALUOpsImmediate(); debug_timesOpcodeSeen++;
-	}
+		_ALUOpsImmediate();
 	if ((opcode & 0b1100'0111) == 0b1100'0111)
-	{
-		_reset(); debug_timesOpcodeSeen++;
-	}
-
-	if (debug_timesOpcodeSeen > 1)
-		std::cout << "fuck " << std::hex << (int)opcode << " " << debug_timesOpcodeSeen << '\n';
+		_reset();
 }
 
 void CPU::m_executePrefixedInstruction()
@@ -930,6 +857,7 @@ void CPU::_miscOpsEIDI()
 	}
 	else if (op == 6)	//DI
 	{
+		m_EIRequested = false;
 		m_interruptManager->disableInterrupts();
 	}
 	else if (op == 7)	//EI
