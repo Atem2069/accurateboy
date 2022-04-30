@@ -61,147 +61,147 @@ void CPU::m_executeInstruction()
 	}
 	if (opcode == 0b0000'1000)
 	{
-		_storeSPAtAddress(); return;
+		_storeSPAtAddress(); debug_timesOpcodeSeen++;
 	}
 	if (opcode == 0b0001'0000)
 	{
-		_STOP(); return;
+		_STOP(); debug_timesOpcodeSeen++;
 	}
 	if (opcode == 0b0001'1000)
 	{
-		_JRUnconditional(); return;
+		_JRUnconditional(); debug_timesOpcodeSeen++;
 	}
 	if ((opcode & 0b1110'0111) == 0b0010'0000)
 	{
-		_JRConditional(); return;
+		_JRConditional(); debug_timesOpcodeSeen++;
 	}
 	if ((opcode & 0b1100'1111) == 0b0000'0001)
 	{
-		_loadR16Immediate(); return;
+		_loadR16Immediate(); debug_timesOpcodeSeen++;
 	}
 	if ((opcode & 0b1100'1111) == 0b0000'1001)
 	{
-		_addHLR16(); return;
+		_addHLR16(); debug_timesOpcodeSeen++;
 	}
 	if ((opcode & 0b1100'1111) == 0b0000'0010)
 	{
-		_storeAccum(); return;
+		_storeAccum(); debug_timesOpcodeSeen++;
 	}
 	if ((opcode & 0b1100'1111) == 0b0000'1010)
 	{
-		_loadAccum(); return;
+		_loadAccum(); debug_timesOpcodeSeen++;
 	}
 	if ((opcode & 0b1100'1111) == 0b0000'0011)
 	{
-		_incR16(); return;
+		_incR16(); debug_timesOpcodeSeen++;
 	}
 	if ((opcode & 0b1100'1111) == 0b0000'1011)
 	{
-		_decR16(); return;
+		_decR16(); debug_timesOpcodeSeen++;
 	}
 	if ((opcode & 0b1100'0111) == 0b0000'0100)
 	{
-		_incR8(); return;
+		_incR8(); debug_timesOpcodeSeen++;
 	}
 	if ((opcode & 0b1100'0111) == 0b0000'0101)
 	{
-		_decR8(); return;
+		_decR8(); debug_timesOpcodeSeen++;
 	}
 	if ((opcode & 0b1100'0111) == 0b0000'0110)
 	{
-		_ldR8Immediate(); return;
+		_ldR8Immediate(); debug_timesOpcodeSeen++;
 	}
 	if ((opcode & 0b1100'0111) == 0b0000'0111)
 	{
-		_bitwiseOps(); return;
+		_bitwiseOps(); debug_timesOpcodeSeen++;
 	}
 	if ((opcode & 0b1100'0000) == 0b0100'0000)
 	{
-		_ldR8(); return;
+		_ldR8(); debug_timesOpcodeSeen++;
 	}
 	if ((opcode & 0b1100'0000) == 0b1000'0000)
 	{
-		_ALUOpsRegister(); return;
+		_ALUOpsRegister(); debug_timesOpcodeSeen++;
 	}
 	if ((opcode & 0b1110'0111) == 0b11000000)
 	{
-		_RETConditional(); return;
+		_RETConditional(); debug_timesOpcodeSeen++;
 	}
 	if (opcode == 0b1110'0000)
 	{
-		_storeHiImmediate(); return;
+		_storeHiImmediate(); debug_timesOpcodeSeen++;
 	}
 	if (opcode == 0b1110'1000)
 	{
-		_addSPImmediate(); return;
+		_addSPImmediate(); debug_timesOpcodeSeen++;
 	}
 	if (opcode == 0b1111'0000)
 	{
-		_loadHiImmediate(); return;
+		_loadHiImmediate(); debug_timesOpcodeSeen++;
 	}
 	if (opcode == 0b1111'1000)
 	{
-		_LDHLSPImmediate(); return;
+		_LDHLSPImmediate(); debug_timesOpcodeSeen++;
 	}
 	if ((opcode & 0b1100'1111) == 0b1100'0001)
 	{
-		_popR16(); return;
+		_popR16(); debug_timesOpcodeSeen++;
 	}
 	if ((opcode & 0b1100'1111) == 0b1100'1001)
 	{
-		_miscStackOps(); return;
+		_miscStackOps(); debug_timesOpcodeSeen++;
 	}
 	if ((opcode & 0b1110'0111) == 0b1100'0010)
 	{
-		_JPConditional(); return;
+		_JPConditional(); debug_timesOpcodeSeen++;
 	}
 	if (opcode == 0b1110'0010)
 	{
-		_storeHi(); return;
+		_storeHi(); debug_timesOpcodeSeen++;
 	}
 	if (opcode == 0b1110'1010)
 	{
-		_storeAccumDirect(); return;
+		_storeAccumDirect(); debug_timesOpcodeSeen++;
 	}
 	if (opcode == 0b1111'0010)
 	{
-		_loadHi(); return;
+		_loadHi(); debug_timesOpcodeSeen++;
 	}
 	if (opcode == 0b1111'1010)
 	{
-		_loadAccumDirect(); return;
+		_loadAccumDirect(); debug_timesOpcodeSeen++;
 	}
 	if (((opcode & 0b1100'0111) == 0b1100'0011) && opcode != 0xCB)
 	{
-		_miscOpsEIDI(); return;
+		_miscOpsEIDI(); debug_timesOpcodeSeen++;
 	}
 	if (opcode == 0xCB)
 	{
-		m_executePrefixedInstruction(); return;
+		m_executePrefixedInstruction(); debug_timesOpcodeSeen++;
 	}
 	if ((opcode & 0b1110'0111) == 0b1100'0100)
 	{
-		_callConditional(); return;
+		_callConditional(); debug_timesOpcodeSeen++;
 	}
 	if ((opcode & 0b1100'1111) == 0b1100'0101)
 	{
-		_pushR16(); return;
+		_pushR16(); debug_timesOpcodeSeen++;
 	}
 	if (opcode == 0b1100'1101)
 	{
-		_callImmediate(); return;
+		_callImmediate(); debug_timesOpcodeSeen++;
 	}
 	if ((opcode & 0b1100'0111) == 0b1100'0110)
 	{
-		_ALUOpsImmediate(); return;
+		_ALUOpsImmediate(); debug_timesOpcodeSeen++;
 	}
 	if ((opcode & 0b1100'0111) == 0b1100'0111)
 	{
-		_reset(); return;
+		_reset(); debug_timesOpcodeSeen++;
 	}
 
 	if (debug_timesOpcodeSeen > 1)
-		std::cout << std::hex << (int)opcode << " " << debug_timesOpcodeSeen << '\n';
+		std::cout << "fuck " << std::hex << (int)opcode << " " << debug_timesOpcodeSeen << '\n';
 }
 
 void CPU::m_executePrefixedInstruction()
@@ -490,7 +490,7 @@ void CPU::_storeSPAtAddress()
 {
 	uint8_t lower = m_fetch();
 	uint8_t higher = m_fetch();
-	uint16_t addr = (higher << 8) | lower;
+	uint16_t addr = ((uint16_t)higher << 8) | lower;
 	m_bus->write(addr, SP.low);
 	m_bus->write(addr+1, SP.high);
 }
@@ -518,7 +518,7 @@ void CPU::_loadR16Immediate()
 {
 	uint8_t lower = m_fetch();
 	uint8_t higher = m_fetch();
-	uint16_t res = (higher << 8) | lower;
+	uint16_t res = ((uint16_t)higher << 8) | lower;
 	uint8_t regIdx = (m_lastOpcode >> 4) & 0b11;
 	setR16(regIdx, res, 1);
 }
@@ -874,7 +874,7 @@ void CPU::_JPConditional()
 {
 	uint8_t low = m_fetch();
 	uint8_t high = m_fetch();
-	uint16_t addr = (high << 8) | low;
+	uint16_t addr = ((uint16_t)high << 8) | low;
 
 	uint8_t conditionCode = (m_lastOpcode >> 3) & 0b11;
 	if (checkConditionsMet(conditionCode))
@@ -893,7 +893,7 @@ void CPU::_storeAccumDirect()
 {
 	uint8_t low = m_fetch();
 	uint8_t high = m_fetch();
-	uint16_t addr = (high << 8) | low;
+	uint16_t addr = ((uint16_t)high << 8) | low;
 	m_bus->write(addr, AF.high);
 }
 
@@ -906,7 +906,7 @@ void CPU::_loadAccumDirect()
 {
 	uint8_t low = m_fetch();
 	uint8_t high = m_fetch();
-	uint16_t addr = (high << 8) | low;
+	uint16_t addr = ((uint16_t)high << 8) | low;
 	AF.high = m_bus->read(addr);
 }
 
@@ -917,7 +917,7 @@ void CPU::_miscOpsEIDI()
 	{
 		uint8_t low = m_fetch();
 		uint8_t high = m_fetch();
-		uint16_t addr = (high << 8) | low;
+		uint16_t addr = ((uint16_t)high << 8) | low;
 		PC = addr;
 		m_bus->tick();
 	}
@@ -943,7 +943,7 @@ void CPU::_callConditional()
 {
 	uint8_t low = m_fetch();
 	uint8_t high = m_fetch();
-	uint16_t addr = (high << 8) | low;
+	uint16_t addr = ((uint16_t)high << 8) | low;
 	uint8_t conditionCode = (m_lastOpcode >> 3) & 0b11;
 	if (checkConditionsMet(conditionCode))
 	{
@@ -964,7 +964,7 @@ void CPU::_callImmediate()
 {
 	uint8_t low = m_fetch();
 	uint8_t high = m_fetch();
-	uint16_t addr = (high << 8) | low;
+	uint16_t addr = ((uint16_t)high << 8) | low;
 	m_bus->tick();	//internal tick
 	m_pushToStack(PC);
 	PC = addr;
