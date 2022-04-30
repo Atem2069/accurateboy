@@ -69,6 +69,7 @@ void CPU::m_executeInstruction()
 	case 0b1111'0010:_loadHi(); break;
 	case 0b1111'1010:_loadAccumDirect(); break;
 	case 0b1100'1101:_callImmediate(); break;
+	case 0b1100'1011:m_executePrefixedInstruction(); return;
 	}
 
 	switch (opcode & 0b1100'1111)	//opcodes with some 2-bit encoding on bits 4-5
@@ -98,15 +99,7 @@ void CPU::m_executeInstruction()
 	case 0b0000'0101:_decR8(); break;
 	case 0b0000'0110:_ldR8Immediate(); break;
 	case 0b0000'0111:_bitwiseOps(); break;
-	case 0b1100'0011:							//bit messy but necessary (because 'opcode' could change so further switch cases could be incorrectly triggered)
-		if (opcode == 0xCB)
-		{
-			m_executePrefixedInstruction();
-			return;
-		}
-		else
-			_miscOpsEIDI();
-		break;
+	case 0b1100'0011:_miscOpsEIDI(); break;
 	case 0b1100'0110:_ALUOpsImmediate(); break;
 	case 0b1100'0111:_reset(); break;
 	}
