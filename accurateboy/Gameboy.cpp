@@ -36,8 +36,6 @@ void GameBoy::run()
 	}
 
 	displayThread.join();
-
-	m_destroy();
 }
 
 void GameBoy::m_initialise()
