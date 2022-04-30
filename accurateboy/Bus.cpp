@@ -33,7 +33,7 @@ uint8_t Bus::read(uint16_t address)
 		//This is SLOW:
 		bool conflictOccurs = ((address <= 0x7FFF) || (address >= 0xA000 && address <= 0xFE00)) && ((m_OAMDMASrc <= 0x7FFF) || (m_OAMDMASrc >= 0xA000 && m_OAMDMASrc <= 0xFE00));
 		conflictOccurs |= (address >= 0x8000 && address <= 0x9FFF) && (m_OAMDMASrc >= 0x8000 && m_OAMDMASrc <= 0x9FFF);
-		if (conflictOccurs && false)
+		if (conflictOccurs)
 		{
 			Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("OAM DMA bus conflict: addr={:#x} dma src={:#x} dma dst={:#x} dma val={:#x}", address, m_OAMDMASrc, 0xFE00 + (m_OAMDMASrc & 0xFF), m_OAMDMAConflictByte));
 			return m_OAMDMAConflictByte;
@@ -55,7 +55,7 @@ void Bus::write(uint16_t address, uint8_t value)
 		//This is SLOW:
 		bool conflictOccurs = ((address <= 0x7FFF) || (address >= 0xA000 && address <= 0xFE00)) && ((m_OAMDMASrc <= 0x7FFF) || (m_OAMDMASrc >= 0xA000 && m_OAMDMASrc <= 0xFE00));
 		conflictOccurs |= (address >= 0x8000 && address <= 0x9FFF) && (m_OAMDMASrc >= 0x8000 && m_OAMDMASrc <= 0x9FFF);
-		if (conflictOccurs && false)
+		if (conflictOccurs)
 		{
 			Logger::getInstance()->msg(LoggerSeverity::Warn, std::format("OAM DMA bus conflict: addr={:#x} dma src={:#x} dma dst={:#x} dma val={:#x}", address, m_OAMDMASrc, 0xFE00 + (m_OAMDMASrc & 0xFF), m_OAMDMAConflictByte));
 			return;
