@@ -53,81 +53,69 @@ void CPU::m_executeInstruction()
 {
 	uint8_t opcode = m_fetch();
 	m_lastOpcode = opcode;
-	if (opcode == 0)
-		return;
-	if (opcode == 0b0000'1000)
-		_storeSPAtAddress();
-	if (opcode == 0b0001'0000)
-		_STOP(); 
-	if (opcode == 0b0001'1000)
-		_JRUnconditional(); 
-	if ((opcode & 0b1110'0111) == 0b0010'0000)
-		_JRConditional(); 
-	if ((opcode & 0b1100'1111) == 0b0000'0001)
-		_loadR16Immediate(); 
-	if ((opcode & 0b1100'1111) == 0b0000'1001)
-		_addHLR16(); 
-	if ((opcode & 0b1100'1111) == 0b0000'0010)
-		_storeAccum();
-	if ((opcode & 0b1100'1111) == 0b0000'1010)
-		_loadAccum();
-	if ((opcode & 0b1100'1111) == 0b0000'0011)
-		_incR16(); 
-	if ((opcode & 0b1100'1111) == 0b0000'1011)
-		_decR16(); 
-	if ((opcode & 0b1100'0111) == 0b0000'0100)
-		_incR8();
-	if ((opcode & 0b1100'0111) == 0b0000'0101)
-		_decR8(); 
-	if ((opcode & 0b1100'0111) == 0b0000'0110)
-		_ldR8Immediate(); 
-	if ((opcode & 0b1100'0111) == 0b0000'0111)
-		_bitwiseOps(); 
-	if ((opcode & 0b1100'0000) == 0b0100'0000)
-		_ldR8(); 
-	if ((opcode & 0b1100'0000) == 0b1000'0000)
-		_ALUOpsRegister(); 
-	if ((opcode & 0b1110'0111) == 0b11000000)
-		_RETConditional();
-	if (opcode == 0b1110'0000)
-		_storeHiImmediate(); 
-	if (opcode == 0b1110'1000)
-		_addSPImmediate();
-	if (opcode == 0b1111'0000)
-		_loadHiImmediate(); 
-	if (opcode == 0b1111'1000)
-		_LDHLSPImmediate();
-	if ((opcode & 0b1100'1111) == 0b1100'0001)
-		_popR16(); 
-	if ((opcode & 0b1100'1111) == 0b1100'1001)
-		_miscStackOps(); 
-	if ((opcode & 0b1110'0111) == 0b1100'0010)
-		_JPConditional(); 
-	if (opcode == 0b1110'0010)
-		_storeHi(); 
-	if (opcode == 0b1110'1010)
-		_storeAccumDirect(); 
-	if (opcode == 0b1111'0010)
-		_loadHi(); 
-	if (opcode == 0b1111'1010)
-		_loadAccumDirect(); 
-	if (((opcode & 0b1100'0111) == 0b1100'0011) && opcode != 0xCB)
-		_miscOpsEIDI(); 
-	if (opcode == 0xCB)
+
+	switch (opcode)				//opcodes w/o any special register encoding
 	{
-		m_executePrefixedInstruction();
-		return;
+	case 0:return;
+	case 0b0000'1000:_storeSPAtAddress(); break;
+	case 0b0001'0000:_STOP(); break;
+	case 0b0001'1000:_JRUnconditional(); break;
+	case 0b1110'0000:_storeHiImmediate(); break;
+	case 0b1110'1000:_addSPImmediate(); break;
+	case 0b1111'0000:_loadHiImmediate(); break;
+	case 0b1111'1000:_LDHLSPImmediate(); break;
+	case 0b1110'0010:_storeHi(); break;
+	case 0b1110'1010:_storeAccumDirect(); break;
+	case 0b1111'0010:_loadHi(); break;
+	case 0b1111'1010:_loadAccumDirect(); break;
+	case 0b1100'1101:_callImmediate(); break;
 	}
-	if ((opcode & 0b1110'0111) == 0b1100'0100)
-		_callConditional(); 
-	if ((opcode & 0b1100'1111) == 0b1100'0101)
-		_pushR16();
-	if (opcode == 0b1100'1101)
-		_callImmediate();
-	if ((opcode & 0b1100'0111) == 0b1100'0110)
-		_ALUOpsImmediate();
-	if ((opcode & 0b1100'0111) == 0b1100'0111)
-		_reset();
+
+	switch (opcode & 0b1100'1111)	//opcodes with some 2-bit encoding on bits 4-5
+	{
+	case 0b0000'0001:_loadR16Immediate(); break;
+	case 0b0000'1001:_addHLR16(); break;
+	case 0b0000'0010:_storeAccum(); break;
+	case 0b0000'1010:_loadAccum(); break;
+	case 0b0000'0011:_incR16(); break;
+	case 0b0000'1011:_decR16(); break;
+	case 0b1100'0001:_popR16(); break;
+	case 0b1100'1001:_miscStackOps(); break;
+	case 0b1100'0101:_pushR16(); break;
+	}
+
+	switch (opcode & 0b1110'0111)	//opcodes with 2-bit encoding on bits 3-4
+	{
+	case 0b0010'0000:_JRConditional(); break;
+	case 0b1100'0000:_RETConditional(); break;
+	case 0b1100'0010:_JPConditional(); break;
+	case 0b1100'0100:_callConditional(); break;
+	}
+
+	switch (opcode & 0b1100'0111)	//opcodes with 3-bit encoding on bits 3-5
+	{
+	case 0b0000'0100:_incR8(); break;
+	case 0b0000'0101:_decR8(); break;
+	case 0b0000'0110:_ldR8Immediate(); break;
+	case 0b0000'0111:_bitwiseOps(); break;
+	case 0b1100'0011:							//bit messy but necessary (because 'opcode' could change so further switch cases could be incorrectly triggered)
+		if (opcode == 0xCB)
+		{
+			m_executePrefixedInstruction();
+			return;
+		}
+		else
+			_miscOpsEIDI();
+		break;
+	case 0b1100'0110:_ALUOpsImmediate(); break;
+	case 0b1100'0111:_reset(); break;
+	}
+
+	switch (opcode & 0b1100'0000)	//the few opcodes that act on 2 8-bit registers (bits 0-5 all used as register encodings)
+	{
+	case 0b0100'0000:_ldR8(); break;
+	case 0b1000'0000:_ALUOpsRegister(); break;
+	}
 }
 
 void CPU::m_executePrefixedInstruction()
