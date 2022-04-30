@@ -2,7 +2,7 @@
 
 Joypad::Joypad()
 {
-	JOYP = 0xFF;
+	JOYP = 0xCF;
 }
 
 Joypad::~Joypad()
@@ -12,7 +12,7 @@ Joypad::~Joypad()
 
 uint8_t Joypad::read(uint16_t address)
 {
-	return JOYP;	//there is literally no way any other address could be read
+	return JOYP | 0b11000000;	//there is literally no way any other address could be read
 }
 
 void Joypad::write(uint16_t address, uint8_t value)

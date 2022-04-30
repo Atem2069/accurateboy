@@ -119,6 +119,10 @@ uint8_t Bus::internalRead(uint16_t address)
 			return m_joypad->read(address); break;
 		case REG_DMA:
 			return m_OAMDMALastByte; break;
+		case 0xFF01:
+			return 0; break;
+		case 0xFF02:
+			return 0x7E; break;
 		}
 	}
 

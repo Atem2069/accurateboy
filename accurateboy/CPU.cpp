@@ -143,6 +143,10 @@ void CPU::m_initIO()
 	HL.reg = {};
 	SP.reg = {};
 	PC = 0;
+
+	m_bus->tick();
+	m_bus->tick();
+
 	/*
 	* Will be re-enabled when emulator is more fleshed out.
 	bool disableBootRom = Config::GB.System.useBootRom;

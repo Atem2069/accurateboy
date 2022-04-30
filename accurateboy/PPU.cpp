@@ -571,6 +571,10 @@ void PPU::write(uint16_t address, uint8_t value)
 		if (!((LCDC >> 7) & 0b1) && ((value >> 7) & 0b1))
 		{
 			LY = 0;
+			m_spritesChecked = 2;
+			m_modeCycleDiff = 0;
+			m_totalLineCycles = 4;
+			m_totalFrameCycles = 4;
 			STAT |= 0b00000010;	//enter mode 2 for line 0 
 		}
 		LCDC=value;
