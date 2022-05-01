@@ -118,7 +118,7 @@ private:
 	void _pushR16();
 	void _callImmediate();
 	void _ALUOpsImmediate();
-	void _reset();
+	void _restart();
 
 	void _CBShiftsRotates();
 	void _CBGetBitComplement();

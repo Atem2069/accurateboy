@@ -107,7 +107,7 @@ void CPU::m_executeInstruction()
 	case 0b0000'0111:_bitwiseOps(); break;
 	case 0b1100'0011:_miscOpsEIDI(); break;
 	case 0b1100'0110:_ALUOpsImmediate(); break;
-	case 0b1100'0111:_reset(); break;
+	case 0b1100'0111:_restart(); break;
 	}
 
 	switch (opcode & 0b1100'0000)	//the few opcodes that act on 2 8-bit registers (bits 0-5 all used as register encodings)
@@ -899,13 +899,13 @@ void CPU::_ALUOpsImmediate()
 	_performALUOperation(op, immVal);
 }
 
-void CPU::_reset()
+void CPU::_restart()
 {
-	uint16_t resetVector = (m_lastOpcode >> 3) & 0b111;
-	resetVector *= 8;
+	uint16_t restartVector = (m_lastOpcode >> 3) & 0b111;
+	restartVector *= 8;
 	m_bus->tick();
 	m_pushToStack(PC);
-	PC = resetVector;
+	PC = restartVector;
 }
 
 void CPU::_CBShiftsRotates()
