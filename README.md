@@ -16,10 +16,13 @@ Highly accurate Game Boy emulator, with a T-Cycle accurate Pixel FIFO implementa
 
 ## mooneye-gb Suite
 
-### Acceptance
+### Acceptance (Excluding Super Game Boy/Game Boy Pocket boot tests)
 | Name | Pass? |
 | -----|------ |
 | add_sp_e_timing | :heavy_check_mark: |
+| boot_div-DMGABCmgb | :x: |
+| boot_hwio-dmgABCmgb | :heavy_check_mark: |
+| boot_regs-dmgABC | :heavy_check_mark: |
 | call_cc_timing | :heavy_check_mark: |
 | call_cc_timing2 | :heavy_check_mark: |
 | call_timing | :heavy_check_mark: |
