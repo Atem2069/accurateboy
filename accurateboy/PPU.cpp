@@ -24,6 +24,14 @@ void PPU::step()
 		LY = 0;
 		return;
 	}
+
+	//check for weird lcdon mode '2'
+	if (m_buggyMode2)
+	{
+		m_buggedOAMSearch();
+		return;
+	}
+
 	uint8_t curPPUMode = STAT & 0b11;
 
 	m_checkSTATInterrupt();
@@ -122,6 +130,29 @@ void PPU::m_vblank()	//mode 1
 			STAT |= 0b00000010;	//enter mode 2
 			m_checkSTATInterrupt();
 		}
+	}
+}
+
+void PPU::m_buggedOAMSearch()	//used when LCD first turns on - no oam scan is done
+{
+	m_VRAMAccessBlocked = false; m_OAMAccessBlocked = false;
+	m_modeCycleDiff++;
+	m_totalLineCycles++;
+	m_totalFrameCycles++;
+	if (m_modeCycleDiff == 76)
+	{
+		m_modeCycleDiff = 0;
+		m_buggyMode2 = false;
+		m_spritesChecked = 0;
+		m_spriteBufferIndex = 0;
+		STAT &= 0b11111100;
+		STAT |= 0b00000011;
+		m_fetcherX = 0;
+		m_lcdXCoord = 0;
+		m_fetcherStage = FetcherStage::FetchTileNumber;
+		m_fetcherBeginDelayed = false;
+		m_fetchingWindowTiles = false;
+		m_checkSTATInterrupt();
 	}
 }
 
@@ -575,7 +606,8 @@ void PPU::write(uint16_t address, uint8_t value)
 			m_modeCycleDiff = 0;
 			m_totalLineCycles = 4;
 			m_totalFrameCycles = 4;
-			STAT |= 0b00000010;	//enter mode 2 for line 0 
+			m_buggyMode2 = true;
+			//STAT |= 0b00000010;	//enter mode 2 for line 0 
 		}
 		LCDC=value;
 		break;

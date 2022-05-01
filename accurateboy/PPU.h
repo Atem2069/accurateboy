@@ -52,6 +52,7 @@ private:
 	void m_checkSTATInterrupt();
 	void m_hblank();
 	void m_vblank();
+	void m_buggedOAMSearch();
 	void m_OAMSearch();
 	void m_LCDTransfer();
 	int m_modeCycleDiff = 0;	//holds cycle difference (reset on mode switch)
@@ -65,6 +66,9 @@ private:
 	bool m_VRAMAccessBlocked = false, m_OAMAccessBlocked = false;
 	//io registers
 	uint8_t LCDC = {}, STAT = {}, SCX = {}, SCY = {}, WY = {}, WX = {}, LY = {}, LYC = {}, BGP = {}, OBP0 = {}, OBP1 = {};
+
+	//check if in "mode 0" from LCD enable
+	bool m_buggyMode2 = false;
 
 	//stat interrupt
 	bool m_lastStatState = false;
