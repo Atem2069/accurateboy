@@ -144,7 +144,7 @@ void CPU::m_initIO()
 	SP.reg = {};
 	PC = 0;
 
-	m_bus->tick();
+	//DIV seems to tick before the first instruction fetch
 	m_bus->tick();
 
 	/*
