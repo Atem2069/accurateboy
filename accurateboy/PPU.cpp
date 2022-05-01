@@ -34,7 +34,7 @@ void PPU::step()
 
 	uint8_t curPPUMode = STAT & 0b11;
 
-	m_checkSTATInterrupt();
+
 
 	switch (curPPUMode)
 	{
@@ -47,6 +47,7 @@ void PPU::step()
 	case 3:
 		m_LCDTransfer(); break;
 	}
+	m_checkSTATInterrupt();
 }
 
 void PPU::m_checkSTATInterrupt()
@@ -102,7 +103,6 @@ void PPU::m_hblank()	//mode 0
 			STAT &= 0b11111100;
 			STAT |= 0b00000010;	//enter mode 2 again
 		}
-		m_checkSTATInterrupt();
 	}
 }
 
@@ -128,7 +128,6 @@ void PPU::m_vblank()	//mode 1
 			LY = 0;				//go back to beginning
 			STAT &= 0b11111100;
 			STAT |= 0b00000010;	//enter mode 2
-			m_checkSTATInterrupt();
 		}
 	}
 }
@@ -152,7 +151,6 @@ void PPU::m_buggedOAMSearch()	//used when LCD first turns on - no oam scan is do
 		m_fetcherStage = FetcherStage::FetchTileNumber;
 		m_fetcherBeginDelayed = false;
 		m_fetchingWindowTiles = false;
-		m_checkSTATInterrupt();
 	}
 }
 
@@ -190,7 +188,6 @@ void PPU::m_OAMSearch()	//mode 2
 			m_fetcherStage = FetcherStage::FetchTileNumber;
 			m_fetcherBeginDelayed = false;
 			m_fetchingWindowTiles = false;
-			m_checkSTATInterrupt();
 		}
 	}
 }
@@ -330,7 +327,6 @@ void PPU::m_LCDTransfer()	//mode 3
 			m_spriteFIFO.pop_front();
 		m_modeCycleDiff = 0;
 		STAT &= 0b11111100;
-		m_checkSTATInterrupt();
 	}
 }
 //todo:
@@ -607,7 +603,7 @@ void PPU::write(uint16_t address, uint8_t value)
 			m_totalLineCycles = 4;
 			m_totalFrameCycles = 4;
 			m_buggyMode2 = true;
-			//STAT |= 0b00000010;	//enter mode 2 for line 0 
+			m_checkSTATInterrupt();	//i have no idea why, but this fixes the lyc on/off test
 		}
 		LCDC=value;
 		break;
