@@ -76,6 +76,7 @@ void PPU::m_checkSTATInterrupt()
 	else
 		STAT &= 0b11111011;
 	statCondHigh |= (oamEnabled && (curPPUMode == 2));
+	statCondHigh |= (oamEnabled && (m_modeCycleDiff == 0 && LY == 144));	//mode 2 oam scan intr can be triggered at the start of vblank?
 	statCondHigh |= (vblankEnabled && (curPPUMode == 1));
 	statCondHigh |= (hblankEnabled && (curPPUMode == 0));
 
