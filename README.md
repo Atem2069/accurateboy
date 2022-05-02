@@ -90,7 +90,7 @@ Highly accurate Game Boy emulator, with a T-Cycle accurate Pixel FIFO implementa
 | lcdon_write_timing-GS | :x: |
 | stat_irq_blocking | :heavy_check_mark: |
 | stat_lyc_onoff | :heavy_check_mark: |
-| vblank_stat_intr-GS | :x: |
+| vblank_stat_intr-GS | :heavy_check_mark: |
 
 
 ### Serial
