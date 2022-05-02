@@ -32,6 +32,13 @@ void PPU::step()
 		return;
 	}
 
+	if (m_latchingNewMode)	//set new mode to be visible to ppu reads
+	{
+		m_latchingNewMode = false;
+		STAT &= ~0b11;
+		STAT |= (m_newMode & 0b11);
+	}
+
 	uint8_t curPPUMode = STAT & 0b11;
 
 
@@ -53,6 +60,9 @@ void PPU::step()
 void PPU::m_checkSTATInterrupt()
 {
 	uint8_t curPPUMode = STAT & 0b11;
+
+	if (m_latchingNewMode)				//checking stat interrupts on same t-cycle that mode changed.
+		curPPUMode = (m_newMode & 0b11);
 
 	bool lycEnabled = (STAT >> 6) & 0b1;
 	bool oamEnabled = (STAT >> 5) & 0b1;
@@ -82,6 +92,7 @@ void PPU::m_hblank()	//mode 0
 	m_totalFrameCycles++;
 	if (m_totalLineCycles == 456)	//enter line takes 456 t cycles
 	{
+		m_latchingNewMode = true;
 		m_modeCycleDiff = 0;
 		m_totalLineCycles = 0;
 		//reset oam list
@@ -90,8 +101,7 @@ void PPU::m_hblank()	//mode 0
 		LY++;
 		if (LY == 144)
 		{
-			STAT &= 0b11111100;
-			STAT |= 0b00000001;	//enter vblank
+			m_newMode = 1;
 			m_interruptManager->requestInterrupt(InterruptType::VBlank);
 
 			//copy over scratch buffer to backbuffer
@@ -99,10 +109,7 @@ void PPU::m_hblank()	//mode 0
 
 		}
 		else
-		{
-			STAT &= 0b11111100;
-			STAT |= 0b00000010;	//enter mode 2 again
-		}
+			m_newMode = 2;
 	}
 }
 
@@ -126,8 +133,8 @@ void PPU::m_vblank()	//mode 1
 			m_totalFrameCycles = 0;
 			m_windowLineCounter = 0;
 			LY = 0;				//go back to beginning
-			STAT &= 0b11111100;
-			STAT |= 0b00000010;	//enter mode 2
+			m_latchingNewMode = true;
+			m_newMode = 2;
 		}
 	}
 }
@@ -144,8 +151,8 @@ void PPU::m_buggedOAMSearch()	//used when LCD first turns on - no oam scan is do
 		m_buggyMode2 = false;
 		m_spritesChecked = 0;
 		m_spriteBufferIndex = 0;
-		STAT &= 0b11111100;
-		STAT |= 0b00000011;
+		m_latchingNewMode = true;
+		m_newMode = 3;
 		m_fetcherX = 0;
 		m_lcdXCoord = 0;
 		m_fetcherStage = FetcherStage::FetchTileNumber;
@@ -181,8 +188,8 @@ void PPU::m_OAMSearch()	//mode 2
 			m_modeCycleDiff = 0;
 			m_spritesChecked = 0;
 			m_spriteBufferIndex = 0;
-			STAT &= 0b11111100;
-			STAT |= 0b00000011;
+			m_latchingNewMode = true;
+			m_newMode = 3;
 			m_fetcherX = 0;
 			m_lcdXCoord = 0;
 			m_fetcherStage = FetcherStage::FetchTileNumber;
@@ -326,7 +333,8 @@ void PPU::m_LCDTransfer()	//mode 3
 		while (m_spriteFIFO.size() > 0)
 			m_spriteFIFO.pop_front();
 		m_modeCycleDiff = 0;
-		STAT &= 0b11111100;
+		m_latchingNewMode = true;
+		m_newMode = 0;
 	}
 }
 //todo:

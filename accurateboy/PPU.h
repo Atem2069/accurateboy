@@ -73,6 +73,10 @@ private:
 	//stat interrupt
 	bool m_lastStatState = false;
 
+	//stat mode switching
+	bool m_latchingNewMode = false;
+	uint8_t m_newMode = 0;
+
 	//lcdc bits
 	bool m_getLCDEnabled();
 	bool m_getWindowNametable();
