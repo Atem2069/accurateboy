@@ -70,11 +70,12 @@ void PPU::m_checkSTATInterrupt()
 	bool hblankEnabled = (STAT >> 3) & 0b1;
 
 	bool statCondHigh = false;
-	statCondHigh = (lycEnabled && (LY == LYC));
-	if (LY == LYC)
+	statCondHigh = (lycEnabled && (LY == LYC) && !m_lyDelay);
+	if (LY == LYC && !m_lyDelay)
 		STAT |= 0b00000100;
 	else
 		STAT &= 0b11111011;
+	m_lyDelay = false;
 	statCondHigh |= (oamEnabled && (curPPUMode == 2));
 	statCondHigh |= (oamEnabled && (m_modeCycleDiff == 0 && LY == 144));	//mode 2 oam scan intr can be triggered at the start of vblank?
 	statCondHigh |= (vblankEnabled && (curPPUMode == 1));
@@ -91,8 +92,12 @@ void PPU::m_hblank()	//mode 0
 	m_modeCycleDiff++;
 	m_totalLineCycles++;
 	m_totalFrameCycles++;
-	if (m_totalLineCycles == 456)	//enter line takes 456 t cycles
+	if ((m_totalLineCycles == 456) || (m_islcdOnLine && m_totalLineCycles==452))	//enter line takes 456 t cycles (except for lcdon line 0)
 	{
+		if (m_islcdOnLine)
+			m_totalFrameCycles += 4;
+		m_lyDelay = true;
+		m_islcdOnLine = false;
 		m_latchingNewMode = true;
 		m_modeCycleDiff = 0;
 		m_totalLineCycles = 0;
@@ -322,7 +327,7 @@ void PPU::m_LCDTransfer()	//mode 3
 
 	if (m_lcdXCoord == 160)	//enter hblank
 	{
-		if ((m_totalLineCycles-80) < 172 || (m_totalLineCycles-80) > 289)
+		if (((m_totalLineCycles-80) < 172 || (m_totalLineCycles-80) > 289) && !m_islcdOnLine)
 			std::cout << m_totalLineCycles-80 << " " << (int)LY << '\n';
 		m_lcdXCoord = 0;
 
@@ -607,11 +612,11 @@ void PPU::write(uint16_t address, uint8_t value)
 		if (!((LCDC >> 7) & 0b1) && ((value >> 7) & 0b1))
 		{
 			LY = 0;
-			m_spritesChecked = 2;
 			m_modeCycleDiff = 0;
-			m_totalLineCycles = 4;
-			m_totalFrameCycles = 4;
+			m_totalLineCycles = 0;
+			m_totalFrameCycles = 0;
 			m_buggyMode2 = true;
+			m_islcdOnLine = true;
 			m_checkSTATInterrupt();	//i have no idea why, but this fixes the lyc on/off test
 		}
 		LCDC=value;

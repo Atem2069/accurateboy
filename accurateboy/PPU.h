@@ -69,9 +69,11 @@ private:
 
 	//check if in "mode 0" from LCD enable
 	bool m_buggyMode2 = false;
+	bool m_islcdOnLine = false;	//maybe could optimise this out?^^
 
 	//stat interrupt
 	bool m_lastStatState = false;
+	bool m_lyDelay = false;
 
 	//stat mode switching
 	bool m_latchingNewMode = false;
