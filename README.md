@@ -86,8 +86,8 @@ Highly accurate Game Boy emulator, with a T-Cycle accurate Pixel FIFO implementa
 | intr_2_mode0_timing_sprites | :x: |
 | intr_2_mode3_timing | :heavy_check_mark: |
 | intr_2_oam_ok_timing | :heavy_check_mark: |
-| lcdon_timing-GS | :x: |
-| lcdon_write_timing-GS | :x: |
+| lcdon_timing-GS | :heavy_check_mark: |
+| lcdon_write_timing-GS | :heavy_check_mark: |
 | stat_irq_blocking | :heavy_check_mark: |
 | stat_lyc_onoff | :heavy_check_mark: |
 | vblank_stat_intr-GS | :heavy_check_mark: |
