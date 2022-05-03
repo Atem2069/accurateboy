@@ -205,6 +205,7 @@ void PPU::m_OAMSearch()	//mode 2
 		{
 			m_modeCycleDiff = 0;
 			m_VRAMReadAccessBlocked = true;
+			m_OAMWriteAccessBlocked = false;	//not sure about this..
 			m_spritesChecked = 0;
 			m_spriteBufferIndex = 0;
 			m_latchingNewMode = true;
