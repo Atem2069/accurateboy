@@ -63,7 +63,8 @@ private:
 
 	std::array<uint8_t, 8192> m_VRAM;
 	std::array<uint8_t, 0xA0> m_OAM;
-	bool m_VRAMAccessBlocked = false, m_OAMAccessBlocked = false;
+	bool m_VRAMReadAccessBlocked = false, m_OAMReadAccessBlocked = false;
+	bool m_VRAMWriteAccessBlocked = false, m_OAMWriteAccessBlocked = false;
 	//io registers
 	uint8_t LCDC = {}, STAT = {}, SCX = {}, SCY = {}, WY = {}, WX = {}, LY = {}, LYC = {}, BGP = {}, OBP0 = {}, OBP1 = {};
 

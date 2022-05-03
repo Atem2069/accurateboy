@@ -21,6 +21,10 @@ void PPU::step()
 		m_totalFrameCycles = 0;
 		m_totalLineCycles = 0;
 		m_modeCycleDiff = 0;
+		m_VRAMReadAccessBlocked = false;
+		m_VRAMWriteAccessBlocked = false;
+		m_OAMReadAccessBlocked = false;
+		m_OAMWriteAccessBlocked = false;
 		LY = 0;
 		return;
 	}
@@ -88,7 +92,8 @@ void PPU::m_checkSTATInterrupt()
 
 void PPU::m_hblank()	//mode 0
 {
-	m_VRAMAccessBlocked = false; m_OAMAccessBlocked = false;
+	m_VRAMReadAccessBlocked = false; m_OAMReadAccessBlocked = false;
+	m_VRAMWriteAccessBlocked = false; m_OAMWriteAccessBlocked = false;
 	m_modeCycleDiff++;
 	m_totalLineCycles++;
 	m_totalFrameCycles++;
@@ -115,13 +120,17 @@ void PPU::m_hblank()	//mode 0
 
 		}
 		else
+		{
+			m_OAMReadAccessBlocked = true;
 			m_newMode = 2;
+		}
 	}
 }
 
 void PPU::m_vblank()	//mode 1
 {
-	m_VRAMAccessBlocked = false; m_OAMAccessBlocked = false;
+	m_VRAMReadAccessBlocked = false; m_OAMReadAccessBlocked = false;
+	m_VRAMWriteAccessBlocked = false; m_OAMWriteAccessBlocked = false;
 	m_modeCycleDiff++;
 	m_totalFrameCycles++;
 
@@ -147,12 +156,14 @@ void PPU::m_vblank()	//mode 1
 
 void PPU::m_buggedOAMSearch()	//used when LCD first turns on - no oam scan is done
 {
-	m_VRAMAccessBlocked = false; m_OAMAccessBlocked = false;
+	m_VRAMWriteAccessBlocked = false; m_OAMWriteAccessBlocked = false;
+	m_VRAMReadAccessBlocked = false; m_OAMReadAccessBlocked = false;
 	m_modeCycleDiff++;
 	m_totalLineCycles++;
 	m_totalFrameCycles++;
 	if (m_modeCycleDiff == 76)
 	{
+		//m_VRAMReadAccessBlocked = true;
 		m_modeCycleDiff = 0;
 		m_buggyMode2 = false;
 		m_spritesChecked = 0;
@@ -169,7 +180,8 @@ void PPU::m_buggedOAMSearch()	//used when LCD first turns on - no oam scan is do
 
 void PPU::m_OAMSearch()	//mode 2
 {
-	m_VRAMAccessBlocked = false; m_OAMAccessBlocked = true;
+	m_VRAMReadAccessBlocked = false; m_OAMReadAccessBlocked = true;
+	m_VRAMWriteAccessBlocked = false; m_OAMWriteAccessBlocked = true;
 	m_modeCycleDiff++;
 	m_totalLineCycles++;
 	m_totalFrameCycles++;
@@ -192,6 +204,7 @@ void PPU::m_OAMSearch()	//mode 2
 		if (m_spritesChecked == 40)
 		{
 			m_modeCycleDiff = 0;
+			m_VRAMReadAccessBlocked = true;
 			m_spritesChecked = 0;
 			m_spriteBufferIndex = 0;
 			m_latchingNewMode = true;
@@ -207,7 +220,8 @@ void PPU::m_OAMSearch()	//mode 2
 
 void PPU::m_LCDTransfer()	//mode 3
 {
-	m_VRAMAccessBlocked = true; m_OAMAccessBlocked = true;
+	m_VRAMReadAccessBlocked = true; m_OAMReadAccessBlocked = true;
+	m_VRAMWriteAccessBlocked = true; m_OAMWriteAccessBlocked = true;
 	m_modeCycleDiff++;
 	m_totalLineCycles++;
 	m_totalFrameCycles++;
@@ -564,9 +578,9 @@ void PPU::m_spritePushToFIFO()
 
 uint8_t PPU::read(uint16_t address)
 {
-	if (address >= 0x8000 && address <= 0x9FFF && !m_VRAMAccessBlocked)
+	if (address >= 0x8000 && address <= 0x9FFF && !m_VRAMReadAccessBlocked)
 		return m_VRAM[address - 0x8000];
-	if (address >= 0xFE00 && address <= 0xFE9F && !m_OAMAccessBlocked)
+	if (address >= 0xFE00 && address <= 0xFE9F && !m_OAMReadAccessBlocked)
 		return m_OAM[address - 0xFE00];
 
 	switch (address)
@@ -600,9 +614,9 @@ uint8_t PPU::read(uint16_t address)
 
 void PPU::write(uint16_t address, uint8_t value)
 {
-	if (address >= 0x8000 && address <= 0x9FFF && !m_VRAMAccessBlocked)
+	if (address >= 0x8000 && address <= 0x9FFF && !m_VRAMWriteAccessBlocked)
 		m_VRAM[address - 0x8000] = value;
-	if (address >= 0xFE00 && address <= 0xFE9F && !m_OAMAccessBlocked)
+	if (address >= 0xFE00 && address <= 0xFE9F && !m_OAMWriteAccessBlocked)
 		m_OAM[address - 0xFE00] = value;
 
 	switch (address)
