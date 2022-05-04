@@ -320,8 +320,6 @@ void PPU::m_LCDTransfer()	//mode 3
 				//if (m_fetcherStage != FetcherStage::FetchTileNumber)	//fetcher might have already advanced if it's in another step, so set it back to ensure it gets rendered again
 				//	m_fetcherX--;
 				//m_fetcherStage = FetcherStage::FetchTileNumber;
-				if (m_fetcherStage == FetcherStage::FetchTileNumber && m_modeCycleDiff == 0)
-					m_fetcherStage = FetcherStage::SpriteFetchTileNumber; m_lastPushSucceeded = true;
 				m_spriteFetchInProgress = true;
 				i = 100;
 
@@ -413,13 +411,7 @@ void PPU::m_fetchTileDataHigh()
 	if (m_modeCycleDiff == 2)
 	{
 		m_modeCycleDiff = 0;
-		if (!m_spriteFetchInProgress)
-			m_fetcherStage = FetcherStage::PushToFIFO;
-		else
-		{
-			m_lastPushSucceeded = false;
-			m_fetcherStage = FetcherStage::SpriteFetchTileNumber;
-		}
+		m_fetcherStage = FetcherStage::PushToFIFO;
 		//same thing really, just + 1!
 		uint16_t tileDataOffset = (m_getTilemap()) ? 0x0000 : 0x1000;
 		if (!m_getTilemap())
@@ -527,7 +519,7 @@ void PPU::m_spriteFetchTileDataHigh()
 
 void PPU::m_spritePushToFIFO()
 {
-	m_modeCycleDiff = 1;
+	m_modeCycleDiff = 0;
 	if (m_lastPushSucceeded)
 		m_fetcherStage = FetcherStage::FetchTileNumber;
 	else
@@ -570,11 +562,32 @@ void PPU::m_spritePushToFIFO()
 			tempPixel.paletteID = paletteID;
 		}
 
-		if ((m_spriteFIFO[i-xCutoff].colorID == 0 || (!m_spriteFIFO[i-xCutoff].hasPriority && tempPixel.hasPriority && oamPriority)))
+		if ((m_spriteFIFO[i-xCutoff].colorID == 0))
 			m_spriteFIFO[i-xCutoff] = tempPixel;
 	}
 
 	m_spriteBuffer[m_consideredSpriteIndex].rendered = true;
+
+	if (m_getSpritesEnabled() && !m_spriteFetchInProgress)
+	{
+		for (int i = 0; i < 10; i++)
+		{
+			int xDiff = m_lcdXCoord - (m_spriteBuffer[i].x - 8);
+			if (xDiff >= 0 && xDiff < 8 && m_spriteBuffer[i].x >= 0 && !m_spriteBuffer[i].rendered)
+			{
+				m_spriteBuffer[i].rendered = true;
+				m_consideredSpriteIndex = i;
+				//m_modeCycleDiff = 1;
+				//if (m_fetcherStage != FetcherStage::FetchTileNumber)	//fetcher might have already advanced if it's in another step, so set it back to ensure it gets rendered again
+				//	m_fetcherX--;
+				//m_fetcherStage = FetcherStage::FetchTileNumber;
+				m_spriteFetchInProgress = true;
+				i = 100;
+
+			}
+		}
+	}
+
 }
 
 uint8_t PPU::read(uint16_t address)
