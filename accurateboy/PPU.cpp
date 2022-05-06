@@ -108,7 +108,7 @@ void PPU::m_hblank()	//mode 0
 		m_totalLineCycles = 0;
 		//reset oam list
 		for (int i = 0; i < 10; i++)
-			m_spriteBuffer[i] = {};
+			m_spriteBuffer[i].rendered = true;
 		LY++;
 		if (LY == 144)
 		{
@@ -193,6 +193,7 @@ void PPU::m_OAMSearch()	//mode 2
 		tempOAMEntry.x = m_OAM[(m_spritesChecked * 4) + 1];
 		tempOAMEntry.tileNumber = m_OAM[(m_spritesChecked * 4) + 2];
 		tempOAMEntry.attributes = m_OAM[(m_spritesChecked * 4) + 3];
+		tempOAMEntry.rendered = false;
 
 		//TODO: 8x16 sprites
 		int scanlineDiff = LY - (tempOAMEntry.y - 16);
@@ -226,13 +227,24 @@ void PPU::m_LCDTransfer()	//mode 3
 	m_modeCycleDiff++;
 	m_totalLineCycles++;
 	m_totalFrameCycles++;
-	if (m_lcdXCoord == 0 && !m_fetcherBeginDelayed && m_modeCycleDiff < 6)
-		return;
-	if (m_lcdXCoord == 0 && !m_fetcherBeginDelayed && m_modeCycleDiff==6)
+	//THIS IS WRONG: emulate proper fetch (maybe sprite fetch affects it!!!!)
+	if (m_getSpritesEnabled() && !m_spriteFetchInProgress)
 	{
-		m_modeCycleDiff = 0;
-		m_fetcherBeginDelayed = true;
+		for (int i = 0; i < 10; i++)
+		{
+			int xDiff = (int)(m_lcdXCoord+8) - (m_spriteBuffer[i].x);
+			if (xDiff >= 0 && xDiff <= 8 && !m_spriteBuffer[i].rendered)
+			{
+				m_spriteBuffer[i].rendered = true;
+				m_consideredSpriteIndex = i;
+				m_modeCycleDiff = 0;
+				m_spriteFetchInProgress = true;
+				i = 100;
+
+			}
+		}
 	}
+
 	switch (m_fetcherStage)
 	{
 	case FetcherStage::FetchTileNumber:
@@ -307,26 +319,6 @@ void PPU::m_LCDTransfer()	//mode 3
 
 	}
 
-	if (m_getSpritesEnabled() && !m_spriteFetchInProgress)
-	{
-		for (int i = 0; i < 10; i++)
-		{
-			int xDiff = m_lcdXCoord - (m_spriteBuffer[i].x - 8);
-			if (xDiff >= 0 && xDiff < 8 && m_spriteBuffer[i].x >= 0 && !m_spriteBuffer[i].rendered)
-			{
-				m_spriteBuffer[i].rendered = true;
-				m_consideredSpriteIndex = i;
-				//m_modeCycleDiff = 1;
-				//if (m_fetcherStage != FetcherStage::FetchTileNumber)	//fetcher might have already advanced if it's in another step, so set it back to ensure it gets rendered again
-				//	m_fetcherX--;
-				//m_fetcherStage = FetcherStage::FetchTileNumber;
-				m_spriteFetchInProgress = true;
-				i = 100;
-
-			}
-		}
-	}
-
 	//if we run into window tiles, reset FIFO
 	if (m_getWindowEnabled() && LY >= WY && m_lcdXCoord >= ((int)WX - 7) && !m_fetchingWindowTiles)
 	{
@@ -342,6 +334,8 @@ void PPU::m_LCDTransfer()	//mode 3
 	{
 		if (((m_totalLineCycles-80) < 172 || (m_totalLineCycles-80) > 289) && !m_islcdOnLine)
 			std::cout << m_totalLineCycles-80 << " " << (int)LY << '\n';
+		//if ((m_totalLineCycles - 80) > 172)
+		//	std::cout << m_totalLineCycles - 80 << '\n';
 		m_lcdXCoord = 0;
 
 		if (m_fetchingWindowTiles)
@@ -412,6 +406,12 @@ void PPU::m_fetchTileDataHigh()
 	{
 		m_modeCycleDiff = 0;
 		m_fetcherStage = FetcherStage::PushToFIFO;
+		if (m_fetcherBeginDelayed == false)
+		{
+			m_fetcherBeginDelayed = true;
+			m_fetcherX--;
+			m_fetcherStage = FetcherStage::FetchTileNumber;
+		}
 		//same thing really, just + 1!
 		uint16_t tileDataOffset = (m_getTilemap()) ? 0x0000 : 0x1000;
 		if (!m_getTilemap())
@@ -430,10 +430,10 @@ void PPU::m_fetchTileDataHigh()
 void PPU::m_pushToFIFO()
 {
 	m_lastPushSucceeded = false;
+	m_modeCycleDiff = 0;
 	if (m_backgroundFIFO.size()==0)
 	{
 		m_lastPushSucceeded = true;
-		m_modeCycleDiff = 0;
 		m_fetcherStage = FetcherStage::FetchTileNumber;
 		for (int i = 0; i < 8; i++)
 		{
@@ -456,21 +456,24 @@ void PPU::m_pushToFIFO()
 
 void PPU::m_spriteFetchTileNumber()
 {
-	m_modeCycleDiff = 0;
-	m_fetcherStage = FetcherStage::SpriteFetchTileDataLow;
-
-	OAMEntry curSprite = m_spriteBuffer[m_consideredSpriteIndex];
-	bool yFlip = ((curSprite.attributes >> 6) & 0b1);
-	m_spriteTileNumber = curSprite.tileNumber;
-	if (m_getSpriteSize())
+	if (m_modeCycleDiff == 2)
 	{
-		uint16_t diff = ((LY + 16) - curSprite.y);
-		if (yFlip)
-			diff = 15 - diff;
-		if (diff >= 8)
-			m_spriteTileNumber |= 0x01;
-		else
-			m_spriteTileNumber &= 0xFE;
+		m_modeCycleDiff = 0;
+		m_fetcherStage = FetcherStage::SpriteFetchTileDataLow;
+
+		OAMEntry curSprite = m_spriteBuffer[m_consideredSpriteIndex];
+		bool yFlip = ((curSprite.attributes >> 6) & 0b1);
+		m_spriteTileNumber = curSprite.tileNumber;
+		if (m_getSpriteSize())
+		{
+			uint16_t diff = ((LY + 16) - curSprite.y);
+			if (yFlip)
+				diff = 15 - diff;
+			if (diff >= 8)
+				m_spriteTileNumber |= 0x01;
+			else
+				m_spriteTileNumber &= 0xFE;
+		}
 	}
 }
 
@@ -572,15 +575,14 @@ void PPU::m_spritePushToFIFO()
 	{
 		for (int i = 0; i < 10; i++)
 		{
-			int xDiff = m_lcdXCoord - (m_spriteBuffer[i].x - 8);
-			if (xDiff >= 0 && xDiff < 8 && m_spriteBuffer[i].x >= 0 && !m_spriteBuffer[i].rendered)
+			int xDiff = (int)(m_lcdXCoord+8) - (m_spriteBuffer[i].x);
+			if (xDiff >= 0 && xDiff <= 8 && !m_spriteBuffer[i].rendered)
 			{
+				if (m_backgroundFIFO.size() != 0)
+					m_fetcherStage = FetcherStage::SpriteFetchTileNumber;
 				m_spriteBuffer[i].rendered = true;
 				m_consideredSpriteIndex = i;
-				//m_modeCycleDiff = 1;
-				//if (m_fetcherStage != FetcherStage::FetchTileNumber)	//fetcher might have already advanced if it's in another step, so set it back to ensure it gets rendered again
-				//	m_fetcherX--;
-				//m_fetcherStage = FetcherStage::FetchTileNumber;
+				m_modeCycleDiff = 0;
 				m_spriteFetchInProgress = true;
 				i = 100;
 
