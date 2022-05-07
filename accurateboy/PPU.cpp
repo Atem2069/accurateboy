@@ -215,6 +215,7 @@ void PPU::m_OAMSearch()	//mode 2
 			m_lcdXCoord = 0;
 			m_fetcherStage = FetcherStage::FetchTileNumber;
 			m_fetcherBeginDelayed = false;
+			m_pixelsToDiscard = 0;
 			m_fetchingWindowTiles = false;
 		}
 	}
@@ -232,12 +233,11 @@ void PPU::m_LCDTransfer()	//mode 3
 	{
 		for (int i = 0; i < 10; i++)
 		{
-			int xDiff = (int)(m_lcdXCoord+8) - (m_spriteBuffer[i].x);
+			int xDiff = (int)(m_lcdXCoord + 8) - (m_spriteBuffer[i].x);
 			if (xDiff >= 0 && xDiff <= 8 && !m_spriteBuffer[i].rendered)
 			{
 				m_spriteBuffer[i].rendered = true;
 				m_consideredSpriteIndex = i;
-				m_modeCycleDiff = 0;
 				m_spriteFetchInProgress = true;
 				i = 100;
 
@@ -272,11 +272,11 @@ void PPU::m_LCDTransfer()	//mode 3
 		FIFOPixel cur = m_backgroundFIFO.front();
 		m_backgroundFIFO.pop_front();
 
-		if (m_lcdXCoord == 0 && m_discardCounter < (SCX % 8) && !m_fetchingWindowTiles)
+		if (m_lcdXCoord == 0 && m_discardCounter < m_pixelsToDiscard && !m_fetchingWindowTiles)
 		{
 			m_discardCounter++;
 		}
-		else if((m_lcdXCoord==0 && m_discardCounter == (SCX % 8)) || m_lcdXCoord>0 || m_fetchingWindowTiles)
+		else if((m_lcdXCoord==0 && m_discardCounter == m_pixelsToDiscard) || m_lcdXCoord>0 || m_fetchingWindowTiles)
 		{
 			m_discardCounter = 0;
 
@@ -350,16 +350,26 @@ void PPU::m_LCDTransfer()	//mode 3
 		m_newMode = 0;
 	}
 }
-//todo:
+
 void PPU::m_fetchTileNumber()
 {
+	//if (m_modeCycleDiff == 1)
+	{
+		if (m_fetcherX<1)
+		{
+			m_pixelsToDiscard = SCX & 0b111;
+			m_discardCounter = 0;
+			m_lcdXCoord = 0;
+		}
+		m_xScroll = SCX;
+	}
 	if (m_modeCycleDiff == 2)
 	{
 		m_modeCycleDiff = 0;
 		m_fetcherStage = FetcherStage::FetchTileDataLow;
 
 		uint16_t tileMapAddr = (m_getBackgroundNametable() ? 0x1c00 : 0x1800);
-		uint16_t xOffset = (m_fetcherX + (SCX / 8)) & 0x1f;
+		uint16_t xOffset = (m_fetcherX + (m_xScroll / 8)) & 0x1f;
 		uint16_t yOffset = 32 * (((LY + SCY) & 0xFF) / 8);
 
 		if (m_fetchingWindowTiles)
@@ -532,12 +542,6 @@ void PPU::m_spritePushToFIFO()
 	OAMEntry curSprite = m_spriteBuffer[m_consideredSpriteIndex];
 	bool xFlip = ((curSprite.attributes >> 5) & 0b1);
 	bool oamPriority = false;
-	for (int j = 0; j < m_consideredSpriteIndex; j++)
-	{
-		//if (m_spriteBuffer[j].x == curSprite.x)
-		//	oamPriority = false;				//doesn't have priority
-	}
-
 ;
 	FIFOPixel empty = {};
 	while (m_spriteFIFO.size() < 8)	//ensure sprite fifo filled with empty pixels
@@ -578,8 +582,6 @@ void PPU::m_spritePushToFIFO()
 			int xDiff = (int)(m_lcdXCoord+8) - (m_spriteBuffer[i].x);
 			if (xDiff >= 0 && xDiff <= 8 && !m_spriteBuffer[i].rendered)
 			{
-				if (m_backgroundFIFO.size() != 0)
-					m_fetcherStage = FetcherStage::SpriteFetchTileNumber;
 				m_spriteBuffer[i].rendered = true;
 				m_consideredSpriteIndex = i;
 				m_modeCycleDiff = 0;

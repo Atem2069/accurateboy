@@ -101,6 +101,8 @@ private:
 	bool m_fetchingWindowTiles = false;
 	uint8_t m_windowLineCounter = 0;
 	int m_discardCounter = 0;
+	int m_pixelsToDiscard = 0;
+	int m_xScroll = 0;
 
 	bool m_spriteFetchInProgress = false;
 	bool m_lastPushSucceeded = false;
