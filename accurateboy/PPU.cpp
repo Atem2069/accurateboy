@@ -268,15 +268,9 @@ void PPU::m_LCDTransfer()	//mode 3
 	//pop off, push to display
 	if (m_backgroundFIFO.size() > 0 && !m_spriteFetchInProgress)
 	{
-		
 		FIFOPixel cur = m_backgroundFIFO.front();
 		m_backgroundFIFO.pop_front();
-
-		if (m_lcdXCoord == 0 && m_discardCounter < m_pixelsToDiscard && !m_fetchingWindowTiles)
-		{
-			m_discardCounter++;
-		}
-		else if((m_lcdXCoord==0 && m_discardCounter == m_pixelsToDiscard) || m_lcdXCoord>0 || m_fetchingWindowTiles)
+		if(m_lcdXCoord>=0)
 		{
 			m_discardCounter = 0;
 
@@ -314,9 +308,8 @@ void PPU::m_LCDTransfer()	//mode 3
 				m_scratchBuffer[pixelCoord] = finalCol;
 			else
 				m_scratchBuffer[pixelCoord] = 0xFFFFFFFF;
-			m_lcdXCoord++;
 		}
-
+		m_lcdXCoord++;
 	}
 
 	//if we run into window tiles, reset FIFO
@@ -325,6 +318,8 @@ void PPU::m_LCDTransfer()	//mode 3
 		m_fetcherStage = FetcherStage::FetchTileNumber;
 		m_modeCycleDiff = 0;
 		m_fetcherX = 0;
+		if (m_lcdXCoord < 0)
+			m_lcdXCoord = 0;
 		while (m_backgroundFIFO.size() > 0)
 			m_backgroundFIFO.pop_front();
 		m_fetchingWindowTiles = true;
@@ -353,8 +348,12 @@ void PPU::m_LCDTransfer()	//mode 3
 
 void PPU::m_fetchTileNumber()
 {
-	m_pixelsToDiscard = SCX & 0b111;
-	m_xScroll = SCX;
+	if (m_modeCycleDiff == 1)
+	{
+		if (!m_fetcherBeginDelayed)
+			m_lcdXCoord = -(SCX & 0b111);
+		m_xScroll = SCX;
+	}
 	if (m_modeCycleDiff == 2)
 	{
 		m_modeCycleDiff = 0;
