@@ -353,16 +353,8 @@ void PPU::m_LCDTransfer()	//mode 3
 
 void PPU::m_fetchTileNumber()
 {
-	//if (m_modeCycleDiff == 1)
-	{
-		if (m_fetcherX<1)
-		{
-			m_pixelsToDiscard = SCX & 0b111;
-			m_discardCounter = 0;
-			m_lcdXCoord = 0;
-		}
-		m_xScroll = SCX;
-	}
+	m_pixelsToDiscard = SCX & 0b111;
+	m_xScroll = SCX;
 	if (m_modeCycleDiff == 2)
 	{
 		m_modeCycleDiff = 0;
