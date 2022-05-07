@@ -12,7 +12,7 @@ GameBoy::~GameBoy()
 
 void GameBoy::run()
 {
-
+	Config::GB.System.inDebug = false;
 	std::thread displayThread(&GameBoy::m_displayWorker, this);
 
 	while (Config::GB.System.RomName.empty())	//periodically sleep until rom name specified

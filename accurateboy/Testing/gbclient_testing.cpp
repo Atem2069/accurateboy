@@ -12,7 +12,7 @@ GBTestClient::~GBTestClient()
 
 bool GBTestClient::run()
 {
-	Config::GB.System.RomName = "test.gb";
+	Config::GB.System.inDebug = true;
 	std::vector<std::string> results;
 	int failCount = 0;
 	for (int i = 0; i < m_numTests; i++)

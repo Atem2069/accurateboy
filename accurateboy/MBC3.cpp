@@ -13,7 +13,7 @@ MBC3::MBC3(std::vector<uint8_t> ROM)
 	m_rtcStart = std::chrono::high_resolution_clock::now();
 
 	uint8_t cartType = ROM[CART_TYPE];
-	if (cartType == 0x10 || cartType==0x13)
+	if ((cartType == 0x10 || cartType==0x13) && !Config::GB.System.inDebug)
 		m_shouldSave = true;
 
 	//need lookup table for RAM banks..

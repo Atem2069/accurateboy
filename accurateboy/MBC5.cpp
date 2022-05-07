@@ -12,7 +12,7 @@ MBC5::MBC5(std::vector<uint8_t> ROM)
 	m_ramBankNumber = 0;
 
 	uint8_t cartType = ROM[CART_TYPE];
-	if (cartType == 0x1B || cartType == 0x1E)
+	if ((cartType == 0x1B || cartType == 0x1E) && !Config::GB.System.inDebug)
 		m_shouldSave = true;
 
 	m_maxROMBanks = (uint16_t)std::pow(2, (double)ROM[CART_ROMSIZE] + 1);

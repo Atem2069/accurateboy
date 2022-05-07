@@ -18,6 +18,7 @@ struct SystemConfig
 	bool reset;
 	bool pause;
 	bool serial;
+	bool inDebug;
 	bool DmgMode;
 };
 

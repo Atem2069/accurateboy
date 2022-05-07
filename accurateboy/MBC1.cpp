@@ -12,7 +12,7 @@ MBC1::MBC1(std::vector<uint8_t> ROM)
 
 
 	uint8_t cartType = ROM[CART_TYPE];
-	if (cartType == 3)
+	if (cartType == 3 && !Config::GB.System.inDebug)
 		m_shouldSave = true;
 
 	m_maxROMBanks = (uint8_t)std::pow(2, (double)ROM[CART_ROMSIZE] + 1);	
