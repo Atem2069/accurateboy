@@ -171,6 +171,7 @@
     <ClCompile Include="MBC3.cpp" />
     <ClCompile Include="MBC5.cpp" />
     <ClCompile Include="PPU.cpp" />
+    <ClCompile Include="Testing\gbclient_testing.cpp" />
     <ClCompile Include="Timer.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -200,6 +201,7 @@
     <ClInclude Include="PPU.h" />
     <ClInclude Include="Shaders\fragment.h" />
     <ClInclude Include="Shaders\vertex.h" />
+    <ClInclude Include="Testing\gbclient_testing.h" />
     <ClInclude Include="Timer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -22,6 +22,12 @@
     <Filter Include="Header Files\Common">
       <UniqueIdentifier>{499ed6ef-adb1-4a83-a303-5fb180f102a8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Testing">
+      <UniqueIdentifier>{7065d0ec-dc72-4fa7-a1be-69e801338526}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Testing">
+      <UniqueIdentifier>{9dcb8fef-909f-4151-81ca-693f52045014}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -98,6 +104,9 @@
     </ClCompile>
     <ClCompile Include="MBC5.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Testing\gbclient_testing.cpp">
+      <Filter>Source Files\Testing</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -181,6 +190,9 @@
     </ClInclude>
     <ClInclude Include="Joypad.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Testing\gbclient_testing.h">
+      <Filter>Header Files\Testing</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

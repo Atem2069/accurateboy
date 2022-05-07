@@ -17,6 +17,7 @@ struct SystemConfig
 	bool useBootRom;
 	bool reset;
 	bool pause;
+	bool serial;
 	bool DmgMode;
 };
 

@@ -58,7 +58,7 @@ void GuiRenderer::render()
 				m_menuItemSelected = true;
 				bool serial = false;	//TODO: FIX
 				ImGui::MenuItem("Serial Debug Output", nullptr, &serial);
-				//Config::getInstance()->setValue<bool>("serialDebug", serial);
+				Config::GB.System.serial = serial;
 
 				ImGui::EndMenu();
 			}

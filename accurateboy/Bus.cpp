@@ -174,7 +174,9 @@ void Bus::internalWrite(uint16_t address, uint8_t value)
 			m_provisionedDMASrc = (value << 8);
 			break;
 		case 0xFF01:
-			std::cout << value; break;
+			if(Config::GB.System.serial)
+				std::cout << value;
+			break;
 		case 0xFF50:		//boot rom lockout
 		{
 			Logger::getInstance()->msg(LoggerSeverity::Info, "Unmapping boot ROM. .");
@@ -187,6 +189,12 @@ void Bus::internalWrite(uint16_t address, uint8_t value)
 
 }
 
+void Bus::setInTestingMode()
+{
+	Logger::getInstance()->msg(LoggerSeverity::Info, "Disabling APU for test mode entry");
+	m_testingDisableAPU = true;
+}
+
 void Bus::tick()
 {
 	//ticks all components
@@ -194,7 +202,8 @@ void Bus::tick()
 	{
 		m_ppu->step();
 		m_timer->step(i == 0);
-		m_apu->step();
+		if(!m_testingDisableAPU)
+			m_apu->step();
 	}
 
 	if (m_OAMDMAInProgress)

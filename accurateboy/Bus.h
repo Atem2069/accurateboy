@@ -19,6 +19,8 @@ public:
 	Bus(std::vector<uint8_t> romData, std::shared_ptr<InterruptManager>& interruptManager, std::shared_ptr<PPU>& ppu, std::shared_ptr<APU>& apu, std::shared_ptr<Timer>& timer, std::shared_ptr<Joypad>& joypad);
 	~Bus();
 
+	void setInTestingMode();
+
 	uint8_t read(uint16_t address);
 	void write(uint16_t address, uint8_t value);
 
@@ -31,6 +33,8 @@ private:
 
 	uint8_t internalRead(uint16_t address);
 	void internalWrite(uint16_t address, uint8_t value);
+
+	bool m_testingDisableAPU = false;
 
 
 	bool m_OAMDMARequested = false;

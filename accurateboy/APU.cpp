@@ -2,7 +2,6 @@
 
 APU::APU()
 {
-	Logger::getInstance()->msg(LoggerSeverity::Info, "Init APU..");
 	m_clearRegisters();
 
 	SDL_Init(SDL_INIT_AUDIO);
