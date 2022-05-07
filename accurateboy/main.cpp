@@ -5,10 +5,9 @@
 
 int main(int argc, char**argv)
 {
-	if (argc)
+	if (argc==2)
 	{
 		Logger::getInstance()->msg(LoggerSeverity::Info, "Starting in debug mode! Ensure mooneye test-suite is located within current directory");
-		std::cout << argv[1] << '\n';
 		if (argv[1]==std::string("-test"))
 		{
 			GBTestClient m_gameBoy;
