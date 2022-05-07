@@ -193,6 +193,18 @@ void CPU::m_initIO()
 uint64_t CPU::getCycleCount() { return m_cycleCount; }
 bool CPU::getInDoubleSpeedMode() {return m_isInDoubleSpeedMode;}
 
+uint8_t CPU::testing_getRegister(uint8_t index)
+{
+	return getR8(index);
+}
+
+bool CPU::testing_getBreakpointHit()
+{
+	bool res = m_testBreakpointHit;
+	m_testBreakpointHit = false;
+	return res;
+}
+
 void CPU::m_set8BitArithmeticFlags(uint8_t opA, uint8_t opB, bool carryIn, bool subtract)
 {
 	uint8_t carryInVal = (carryIn) ? m_getCarryFlag() : 0;
@@ -648,6 +660,10 @@ void CPU::_ldR8()
 	}
 	uint8_t srcRegIndex = m_lastOpcode & 0b111;
 	uint8_t dstRegIndex = (m_lastOpcode >> 3) & 0b111;
+
+	//test for LD B,B
+	if (srcRegIndex == 0 && dstRegIndex == 0)
+		m_testBreakpointHit = true;
 
 	setR8(dstRegIndex, getR8(srcRegIndex));
 }

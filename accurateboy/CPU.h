@@ -30,6 +30,9 @@ public:
 
 	bool getInDoubleSpeedMode();
 
+	uint8_t testing_getRegister(uint8_t index);
+	bool testing_getBreakpointHit();
+
 private:
 	void m_dispatchInterrupt();
 	uint8_t m_fetch();
@@ -55,6 +58,7 @@ private:
 	void m_setSubtractFlag(bool value);
 
 	uint8_t m_lastOpcode = 0;
+	bool m_testBreakpointHit = false;
 
 	bool m_EIRequested = false;
 	int m_instrSinceEI = 0;
