@@ -228,7 +228,6 @@ void PPU::m_LCDTransfer()	//mode 3
 	m_modeCycleDiff++;
 	m_totalLineCycles++;
 	m_totalFrameCycles++;
-	//THIS IS WRONG: emulate proper fetch (maybe sprite fetch affects it!!!!)
 	if (m_getSpritesEnabled() && !m_spriteFetchInProgress)
 	{
 		for (int i = 0; i < 10; i++)
@@ -240,7 +239,6 @@ void PPU::m_LCDTransfer()	//mode 3
 				m_consideredSpriteIndex = i;
 				m_spriteFetchInProgress = true;
 				i = 100;
-
 			}
 		}
 	}
@@ -430,12 +428,12 @@ void PPU::m_fetchTileDataHigh()
 
 void PPU::m_pushToFIFO()
 {
-	m_lastPushSucceeded = false;
-	m_modeCycleDiff = 0;
+	if(m_modeCycleDiff==1)
+		m_lastPushSucceeded = false;
 	if (m_backgroundFIFO.size()==0)
 	{
 		m_lastPushSucceeded = true;
-		m_fetcherStage = FetcherStage::FetchTileNumber;
+		//m_fetcherStage = FetcherStage::FetchTileNumber;
 		for (int i = 0; i < 8; i++)
 		{
 			uint8_t colHigh = (m_tileDataHigh >> (7 - i)) & 0b1;
@@ -451,8 +449,22 @@ void PPU::m_pushToFIFO()
 			m_backgroundFIFO.push_back(tempPixel);
 		}
 	}
-	if (m_spriteFetchInProgress)				//if fetching sprite tiles, instead of resetting to bg fetching - go to sprite fetching
-		m_fetcherStage = FetcherStage::SpriteFetchTileNumber;
+	if (m_modeCycleDiff > 1)
+	{
+		if (m_lastPushSucceeded)
+		{
+			m_modeCycleDiff = 0;
+			m_fetcherStage = FetcherStage::FetchTileNumber;
+		}
+		if (m_spriteFetchInProgress)				//if fetching sprite tiles, instead of resetting to bg fetching - go to sprite fetching
+		{
+			if (m_spriteBuffer[m_consideredSpriteIndex].x == 0)
+				m_modeCycleDiff = -3;
+			else
+				m_modeCycleDiff = 1;
+			m_fetcherStage = FetcherStage::SpriteFetchTileNumber;
+		}
+	}
 }
 
 void PPU::m_spriteFetchTileNumber()
@@ -575,8 +587,9 @@ void PPU::m_spritePushToFIFO()
 			{
 				m_spriteBuffer[i].rendered = true;
 				m_consideredSpriteIndex = i;
-				m_modeCycleDiff = 0;
+				m_modeCycleDiff = 1;
 				m_spriteFetchInProgress = true;
+				m_fetcherStage = FetcherStage::SpriteFetchTileNumber;
 				i = 100;
 
 			}
