@@ -458,10 +458,21 @@ void PPU::m_pushToFIFO()
 		}
 		if (m_spriteFetchInProgress)				//if fetching sprite tiles, instead of resetting to bg fetching - go to sprite fetching
 		{
-			if (m_spriteBuffer[m_consideredSpriteIndex].x == 0)
-				m_modeCycleDiff = -3;
-			else
-				m_modeCycleDiff = 1;
+			int posMod8 = ((int)m_spriteBuffer[m_consideredSpriteIndex].x % 8);
+			//add extra delay cycles to sprite push
+			int extraDelayCycles = 0;
+			switch (posMod8 % 8)
+			{
+			case 0: extraDelayCycles = 5; break;
+			case 1: extraDelayCycles = 4; break;
+			case 2:extraDelayCycles = 3; break;
+			case 3:extraDelayCycles = 2; break;
+			case 4:extraDelayCycles = 1; break;
+			case 5: case 6: case 7:
+					extraDelayCycles = 0; break;
+			}
+			m_spritePenaltyCycles = extraDelayCycles;
+			m_modeCycleDiff = 1;
 			m_fetcherStage = FetcherStage::SpriteFetchTileNumber;
 		}
 	}
@@ -535,6 +546,11 @@ void PPU::m_spriteFetchTileDataHigh()
 
 void PPU::m_spritePushToFIFO()
 {
+	if (m_modeCycleDiff < m_spritePenaltyCycles)
+		return;
+
+	m_spritePenaltyCycles = 0;
+
 	m_modeCycleDiff = 0;
 	if (m_lastPushSucceeded)
 		m_fetcherStage = FetcherStage::FetchTileNumber;
