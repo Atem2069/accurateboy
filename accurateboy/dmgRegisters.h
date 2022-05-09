@@ -2,6 +2,8 @@
 #include<iostream>
 
 const uint16_t REG_JOYPAD = 0xFF00;
+const uint16_t REG_SB = 0xFF01;
+const uint16_t REG_SC = 0xFF02;
 const uint16_t REG_DIV = 0xFF04;	//DIV  timer. incremented at 16384Hz
 const uint16_t REG_TIMA = 0xFF05;	//Incremented at some rate according to FF07, and when it overflows triggers an interrupt
 const uint16_t REG_TMA = 0xFF06;	//Loaded when TIMA overflows

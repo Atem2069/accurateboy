@@ -28,6 +28,7 @@ private:
 	std::shared_ptr<APU> m_apu;
 	std::shared_ptr<Timer> m_timer;
 	std::shared_ptr<Joypad> m_joypad;
+	std::shared_ptr<Serial> m_serial;
 	JoypadState m_joyState = {};
 
 	//add rest later, just a few to make the client work

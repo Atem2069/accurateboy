@@ -8,6 +8,7 @@
 #include"APU.h"
 #include"Timer.h"
 #include"Joypad.h"
+#include"Serial.h"
 
 #include<iostream>
 #include<vector>
@@ -16,7 +17,7 @@
 class Bus
 {
 public:
-	Bus(std::vector<uint8_t> romData, std::shared_ptr<InterruptManager>& interruptManager, std::shared_ptr<PPU>& ppu, std::shared_ptr<APU>& apu, std::shared_ptr<Timer>& timer, std::shared_ptr<Joypad>& joypad);
+	Bus(std::vector<uint8_t> romData, std::shared_ptr<InterruptManager>& interruptManager, std::shared_ptr<PPU>& ppu, std::shared_ptr<APU>& apu, std::shared_ptr<Timer>& timer, std::shared_ptr<Joypad>& joypad, std::shared_ptr<Serial>& serial);
 	~Bus();
 
 	void setInTestingMode();
@@ -52,4 +53,5 @@ private:
 	std::shared_ptr<APU> m_apu;
 	std::shared_ptr<Timer> m_timer;
 	std::shared_ptr<Joypad> m_joypad;
+	std::shared_ptr<Serial> m_serial;
 };

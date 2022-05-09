@@ -144,3 +144,8 @@ void Timer::write(uint16_t address, uint8_t value)
 		break;
 	}
 }
+
+uint16_t Timer::getClockDivider()
+{
+	return m_divider;
+}

@@ -175,6 +175,7 @@
     <ClCompile Include="MBC3.cpp" />
     <ClCompile Include="MBC5.cpp" />
     <ClCompile Include="PPU.cpp" />
+    <ClCompile Include="Serial.cpp" />
     <ClCompile Include="Testing\gbclient_testing.cpp" />
     <ClCompile Include="Timer.cpp" />
   </ItemGroup>
@@ -203,6 +204,7 @@
     <ClInclude Include="Logger.h" />
     <ClInclude Include="MBC.h" />
     <ClInclude Include="PPU.h" />
+    <ClInclude Include="Serial.h" />
     <ClInclude Include="Shaders\fragment.h" />
     <ClInclude Include="Shaders\vertex.h" />
     <ClInclude Include="Testing\gbclient_testing.h" />

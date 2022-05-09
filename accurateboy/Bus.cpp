@@ -1,6 +1,6 @@
 #include"Bus.h"
 
-Bus::Bus(std::vector<uint8_t> romData, std::shared_ptr<InterruptManager>& interruptManager, std::shared_ptr<PPU>& ppu, std::shared_ptr<APU>& apu, std::shared_ptr<Timer>& timer, std::shared_ptr<Joypad>& joypad)
+Bus::Bus(std::vector<uint8_t> romData, std::shared_ptr<InterruptManager>& interruptManager, std::shared_ptr<PPU>& ppu, std::shared_ptr<APU>& apu, std::shared_ptr<Timer>& timer, std::shared_ptr<Joypad>& joypad, std::shared_ptr<Serial>& serial)
 {
 	uint8_t cartType = romData[0x0147];
 	if (cartType >= 0x01 && cartType <= 0x03)
@@ -16,6 +16,7 @@ Bus::Bus(std::vector<uint8_t> romData, std::shared_ptr<InterruptManager>& interr
 	m_apu = apu;
 	m_timer = timer;
 	m_joypad = joypad;
+	m_serial = serial;
 	m_inBootRom = true;
 }
 
@@ -119,10 +120,8 @@ uint8_t Bus::internalRead(uint16_t address)
 			return m_joypad->read(address); break;
 		case REG_DMA:
 			return m_OAMDMALastByte; break;
-		case 0xFF01:
-			return 0; break;
-		case 0xFF02:
-			return 0x7E; break;
+		case REG_SB: case REG_SC:
+			return m_serial->read(address); break;
 		}
 	}
 
@@ -173,10 +172,8 @@ void Bus::internalWrite(uint16_t address, uint8_t value)
 			m_OAMDMARequested = true;
 			m_provisionedDMASrc = (value << 8);
 			break;
-		case 0xFF01:
-			if(Config::GB.System.serial)
-				std::cout << value;
-			break;
+		case REG_SB: case REG_SC:
+			m_serial->write(address, value); break;
 		case 0xFF50:		//boot rom lockout
 		{
 			Logger::getInstance()->msg(LoggerSeverity::Info, "Unmapping boot ROM. .");
@@ -202,6 +199,7 @@ void Bus::tick()
 	{
 		m_ppu->step();
 		m_timer->step(i == 0);
+		m_serial->step(m_timer->getClockDivider());
 		if(!m_testingDisableAPU)
 			m_apu->step();
 	}

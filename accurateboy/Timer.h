@@ -14,6 +14,7 @@ public:
 	
 	uint8_t read(uint16_t address);
 	void write(uint16_t address, uint8_t value);
+	uint16_t getClockDivider();
 private:
 	void m_tickTIMA(uint16_t lastDiv, uint16_t newDiv);
 	void m_checkTACMuxChange(uint8_t newTAC);
