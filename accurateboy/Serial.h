@@ -20,4 +20,5 @@ private:
 	std::shared_ptr<InterruptManager> m_interruptManager;
 	uint16_t m_lastClockDivider = 0;	//on reset, clock divider is 0
 	uint8_t SB = 0, SC = 0;	//SB: serial transfer data. SC: serial transfer control
+	int m_shiftCounter = 0;	//count how many shifts have occured
 };
