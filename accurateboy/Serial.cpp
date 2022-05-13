@@ -15,22 +15,22 @@ void Serial::step(uint16_t newClockDivider)
 	bool transferEnabled = (SC >> 7) & 0b1;
 	if (transferEnabled)
 	{
-		if (!(SC & 0b1))
-			return;
-
-		//8192 hz = bit 8
-		uint16_t m_lastDividerBit = ((m_lastClockDivider >> 8) & 0b1);
-		uint16_t m_newDividerBit = ((newClockDivider >> 8) & 0b1);
-		if (m_lastDividerBit && !m_newDividerBit)	//falling edge detected - do shift
+		if ((SC & 0b1))
 		{
-			SB <<= 1;	//right shift and shift in a 1
-			SB |= 0b1;
-			m_shiftCounter++;
-			if (m_shiftCounter == 8)
+			//8192 hz = bit 8
+			uint16_t m_lastDividerBit = ((m_lastClockDivider >> 8) & 0b1);
+			uint16_t m_newDividerBit = ((newClockDivider >> 8) & 0b1);
+			if (m_lastDividerBit && !m_newDividerBit)	//falling edge detected - do shift
 			{
-				m_shiftCounter = 0;
-				SC &= 0b01111111;
-				m_interruptManager->requestInterrupt(InterruptType::Serial);
+				SB <<= 1;	//right shift and shift in a 1
+				SB |= 0b1;
+				m_shiftCounter++;
+				if (m_shiftCounter == 8)
+				{
+					m_shiftCounter = 0;
+					SC &= 0b01111111;
+					m_interruptManager->requestInterrupt(InterruptType::Serial);
+				}
 			}
 		}
 	}
@@ -57,8 +57,6 @@ void Serial::write(uint16_t address, uint8_t value)
 			std::cout << value;
 		SB = value; break;
 	case REG_SC:
-		if (((SC >> 7) & 0b1) && !((value >> 7) & 0b1))
-			m_shiftCounter = 0;
 		SC = value;
 		break;	//bitmask probably sorts this out anyway
 	}

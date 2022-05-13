@@ -471,6 +471,9 @@ void PPU::m_pushToFIFO()
 			case 5: case 6: case 7:
 					extraDelayCycles = 0; break;
 			}
+			extraDelayCycles -= (SCX & 0b111);
+			if (extraDelayCycles < 0)
+				extraDelayCycles = 0;
 			m_spritePenaltyCycles = extraDelayCycles;
 			m_modeCycleDiff = 1;
 			m_fetcherStage = FetcherStage::SpriteFetchTileNumber;
