@@ -198,7 +198,7 @@ void Bus::tick()
 	for (int i = 0; i < 4; i++)
 	{
 		m_ppu->step();
-		m_timer->step(i == 0);
+		m_timer->step();
 		m_serial->step(m_timer->getClockDivider());
 		if(!m_testingDisableAPU)
 			m_apu->step();

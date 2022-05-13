@@ -10,17 +10,21 @@ Timer::~Timer()
 	
 }
 
-void Timer::step(bool firstCycle)
+void Timer::step()
 {
-	if (m_timerIrqCycle && firstCycle)
-		m_timerIrqCycle = false;
+	if (m_timerIrqCycles > 0)
+	{
+		m_timerIrqCycles++;
+		if (m_timerIrqCycles == 4)
+			m_timerIrqCycles = 0;
+	}
 	if (m_timerReloading)
 	{
 		m_timerReloadCycles++;
 		if (m_timerReloadCycles == 4)
 		{
-			m_timerIrqCycle = true;
 			m_timerReloadCycles = 0;
+			m_timerIrqCycles = 1;
 			m_timerReloading = false;
 			TIMA = TMA;
 			m_interruptManager->requestInterrupt(InterruptType::Timer);
@@ -115,7 +119,7 @@ void Timer::write(uint16_t address, uint8_t value)
 		m_tickTIMA(m_divider, 0);
 		m_divider = 0; break;
 	case REG_TIMA:
-		if (!m_timerIrqCycle)	//TIMA is always writable, except for the cycle where TIMA <- TMA.
+		if (!m_timerIrqCycles)	//TIMA is always writable, except for the cycle where TIMA <- TMA.
 		{
 			TIMA = value;
 			m_timerReloading = false;
@@ -124,7 +128,7 @@ void Timer::write(uint16_t address, uint8_t value)
 		break;
 	case REG_TMA:
 		TMA = value;
-		if (m_timerIrqCycle)	//if TMA written on same m-cycle that the irq is raised (i.e. TIMA is loaded), then TIMA gets loaded with the new value from TMA
+		if (m_timerIrqCycles)	//if TMA written on same m-cycle that the irq is raised (i.e. TIMA is loaded), then TIMA gets loaded with the new value from TMA
 			TIMA = TMA;
 		break;
 	case REG_TAC:

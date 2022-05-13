@@ -10,7 +10,7 @@ public:
 	Timer(std::shared_ptr<InterruptManager>& interruptManager);
 	~Timer();
 
-	void step(bool firstCycle);
+	void step();
 	
 	uint8_t read(uint16_t address);
 	void write(uint16_t address, uint8_t value);
@@ -26,9 +26,9 @@ private:
 	uint8_t TMA = 0;
 	uint8_t TAC = 0;
 
-	bool m_timerIrqCycle = false;
 	bool m_timerReloading = false;
 	int m_timerReloadCycles = 0;
+	int m_timerIrqCycles = 0;
 
 	uint16_t m_divider = 0;
 };
