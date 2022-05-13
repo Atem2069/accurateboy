@@ -106,8 +106,9 @@ private:
 
 	bool m_spriteFetchInProgress = false;
 	bool m_lastPushSucceeded = false;
-	bool m_wasSpriteFetch = false;;
+	bool m_wasSpriteFetch = false;
 	int m_spritePenaltyCycles = 0;
+	bool m_spriteStartupPenaltyApplied = false;
 
 	void m_fetchTileNumber();
 	void m_fetchTileDataLow();
