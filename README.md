@@ -20,7 +20,7 @@ Highly accurate Game Boy emulator, with a T-Cycle accurate Pixel FIFO implementa
 | Name | Pass? |
 | -----|------ |
 | add_sp_e_timing | :heavy_check_mark: |
-| boot_div-DMGABCmgb | :heavy_check_mark: |
+| boot_div-dmgABCmgb | :heavy_check_mark: |
 | boot_hwio-dmgABCmgb | :heavy_check_mark: |
 | boot_regs-dmgABC | :heavy_check_mark: |
 | call_cc_timing | :heavy_check_mark: |
@@ -79,7 +79,7 @@ Highly accurate Game Boy emulator, with a T-Cycle accurate Pixel FIFO implementa
 ### PPU
 | Name | Pass? |
 | -----|------ |
-| hblank_ly_scx_timing-GS | :heavy_check_mark: |
+| hblank_ly_scx_timing-GS | :x: <-- FUCK THIS TEST |
 | intr_1_2_timing-GS | :heavy_check_mark: |
 | intr_2_0_timing | :heavy_check_mark: |
 | intr_2_mode0_timing | :heavy_check_mark: |
@@ -94,7 +94,9 @@ Highly accurate Game Boy emulator, with a T-Cycle accurate Pixel FIFO implementa
 
 
 ### Serial
- - [ ] No serial support implemented
+| Name | Pass? |
+| -----|------ |
+| boot_sclk_align-dmgABCmgb | :heavy_check_mark: |
 
 ### Timer
 | Name | Pass? |
