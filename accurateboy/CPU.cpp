@@ -16,14 +16,25 @@ CPU::~CPU()
 
 void CPU::step()
 {
+	m_lastPC = PC;
+	/*if (!m_halted)
+		m_executeInstruction();
+	else
+	{
+		m_bus->tick();
+		if (m_interruptManager->getActiveInterrupt(false) != InterruptType::None)
+			m_dispatchInterrupt();
+	}*/
+
+	m_lastOpcode = m_fetch();
+
 	if (m_interruptManager->getActiveInterrupt(false) != InterruptType::None)
 		m_dispatchInterrupt();
 
-	m_lastPC = PC;
-	if (!m_halted)
+	if (m_halted)
+		PC--;
+	if(!m_halted)
 		m_executeInstruction();
-	else
-		m_bus->tick();
 
 	if (m_EIRequested)	//odd hack, essentially only re-enable after an instruction has passed. TODO: EI and then DI overrides the enable
 	{
@@ -40,7 +51,7 @@ void CPU::m_dispatchInterrupt()
 {
 	if (m_interruptManager->getInterruptsEnabled())
 	{
-		m_bus->tick();
+		PC--;
 		m_bus->tick();
 
 		//would be nice to use 'm_pushToStack' here, however the interrupt dispatch timing dictates that the interrupt dispatch can't be cancelled after the high byte push
@@ -51,15 +62,17 @@ void CPU::m_dispatchInterrupt()
 		m_interruptManager->disableInterrupts();
 		PC = (uint16_t)queuedInt;
 		m_bus->tick();
+
+		m_lastOpcode = m_fetch();
 	}
 	m_halted = false;
 }
 
 void CPU::m_executeInstruction()
 {
-	uint8_t opcode = m_fetch();
-	m_lastOpcode = opcode;
-
+	//uint8_t opcode = m_fetch();
+	//m_lastOpcode = opcode;
+	uint8_t opcode = m_lastOpcode;
 	switch (opcode)				//opcodes w/o any special register encoding
 	{
 	case 0:return;

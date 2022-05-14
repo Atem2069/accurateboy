@@ -42,7 +42,6 @@ void PPU::step()
 		STAT &= ~0b11;
 		STAT |= (m_newMode & 0b11);
 	}
-
 	uint8_t curPPUMode = STAT & 0b11;
 
 
@@ -65,9 +64,10 @@ void PPU::m_checkSTATInterrupt()
 {
 	uint8_t curPPUMode = STAT & 0b11;
 
-	if (m_latchingNewMode)				//checking stat interrupts on same t-cycle that mode changed.
-		curPPUMode = (m_newMode & 0b11);
-
+	//if (m_latchingNewMode)				//checking stat interrupts on same t-cycle that mode changed.
+	//	curPPUMode = (m_newMode & 0b11);
+	//if (m_latchingNewMode && m_newMode == 0)
+	//	curPPUMode = 0;
 	bool lycEnabled = (STAT >> 6) & 0b1;
 	bool oamEnabled = (STAT >> 5) & 0b1;
 	bool vblankEnabled = (STAT >> 4) & 0b1;
@@ -113,6 +113,8 @@ void PPU::m_hblank()	//mode 0
 		if (LY == 144)
 		{
 			m_newMode = 1;
+			//STAT &= 0b11111100;
+			//STAT |= 0b00000001;
 			m_interruptManager->requestInterrupt(InterruptType::VBlank);
 
 			//copy over scratch buffer to backbuffer
@@ -123,6 +125,8 @@ void PPU::m_hblank()	//mode 0
 		{
 			m_OAMReadAccessBlocked = true;
 			m_newMode = 2;
+			//STAT &= 0b11111100;
+			//STAT |= 0b00000010;
 		}
 	}
 }
@@ -150,6 +154,7 @@ void PPU::m_vblank()	//mode 1
 			LY = 0;				//go back to beginning
 			m_latchingNewMode = true;
 			m_newMode = 2;
+			//STAT &= 0b11111100; STAT |= 0b00000010;
 		}
 	}
 }
@@ -170,6 +175,8 @@ void PPU::m_buggedOAMSearch()	//used when LCD first turns on - no oam scan is do
 		m_spriteBufferIndex = 0;
 		m_latchingNewMode = true;
 		m_newMode = 3;
+		//STAT &= 0b11111100;
+		//STAT |= 0b00000011;
 		m_fetcherX = 0;
 		m_lcdXCoord = 0;
 		m_fetcherStage = FetcherStage::FetchTileNumber;
@@ -211,6 +218,8 @@ void PPU::m_OAMSearch()	//mode 2
 			m_spriteBufferIndex = 0;
 			m_latchingNewMode = true;
 			m_newMode = 3;
+			//STAT &= 0b11111100;
+			//STAT |= 0b00000011;
 			m_fetcherX = 0;
 			m_lcdXCoord = 0;
 			m_fetcherStage = FetcherStage::FetchTileNumber;
@@ -344,6 +353,7 @@ void PPU::m_LCDTransfer()	//mode 3
 		m_modeCycleDiff = 0;
 		m_latchingNewMode = true;
 		m_newMode = 0;
+		//STAT &= 0b11111100;
 	}
 }
 
