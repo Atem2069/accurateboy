@@ -29,6 +29,13 @@ void PPU::step()
 		return;
 	}
 
+	if (m_islcdOnLine && m_ppuLateCycles < 4)
+	{
+		m_ppuLateCycles++;
+		return;
+	}
+	m_ppuLateCycles = 999;
+
 	//check for weird lcdon mode '2'
 	if (m_buggyMode2)
 	{
@@ -66,22 +73,22 @@ void PPU::m_checkSTATInterrupt()
 
 	//if (m_latchingNewMode)				//checking stat interrupts on same t-cycle that mode changed.
 	//	curPPUMode = (m_newMode & 0b11);
-	//if (m_latchingNewMode && m_newMode == 0)
-	//	curPPUMode = 0;
+	if (m_latchingNewMode && m_newMode == 2)
+		curPPUMode = 2;
 	bool lycEnabled = (STAT >> 6) & 0b1;
 	bool oamEnabled = (STAT >> 5) & 0b1;
 	bool vblankEnabled = (STAT >> 4) & 0b1;
 	bool hblankEnabled = (STAT >> 3) & 0b1;
 
 	bool statCondHigh = false;
-	statCondHigh = (lycEnabled && (LY == LYC) && !m_lyDelay);
-	if (LY == LYC && !m_lyDelay)
+	statCondHigh = (lycEnabled && (m_comparisonLY == LYC) && !m_lyDelay);
+	if (m_comparisonLY == LYC && !m_lyDelay)
 		STAT |= 0b00000100;
 	else
 		STAT &= 0b11111011;
 	m_lyDelay = false;
 	statCondHigh |= (oamEnabled && (curPPUMode == 2));
-	statCondHigh |= (oamEnabled && (m_modeCycleDiff == 0 && LY == 144));	//mode 2 oam scan intr can be triggered at the start of vblank?
+	statCondHigh |= (oamEnabled && (m_modeCycleDiff == 0 && m_comparisonLY == 144));	//mode 2 oam scan intr can be triggered at the start of vblank?
 	statCondHigh |= (vblankEnabled && (curPPUMode == 1));
 	statCondHigh |= (hblankEnabled && (curPPUMode == 0));
 
@@ -97,24 +104,29 @@ void PPU::m_hblank()	//mode 0
 	m_modeCycleDiff++;
 	m_totalLineCycles++;
 	m_totalFrameCycles++;
+	if ((!m_islcdOnLine && m_totalLineCycles == 450))
+		LY++;
+	if ((m_islcdOnLine && m_totalLineCycles == 446))
+		LY++;
 	if ((m_totalLineCycles == 456) || (m_islcdOnLine && m_totalLineCycles==452))	//enter line takes 456 t cycles (except for lcdon line 0)
 	{
 		if (m_islcdOnLine)
 			m_totalFrameCycles += 4;
+		m_comparisonLY++;
 		m_lyDelay = true;
 		m_islcdOnLine = false;
-		m_latchingNewMode = true;
+		//m_latchingNewMode = true;
 		m_modeCycleDiff = 0;
 		m_totalLineCycles = 0;
 		//reset oam list
 		for (int i = 0; i < 10; i++)
 			m_spriteBuffer[i].rendered = true;
-		LY++;
 		if (LY == 144)
 		{
-			m_newMode = 1;
-			//STAT &= 0b11111100;
-			//STAT |= 0b00000001;
+			//m_newMode = 1;
+			m_latchingNewMode = false;
+			STAT &= 0b11111100;
+			STAT |= 0b00000001;
 			m_interruptManager->requestInterrupt(InterruptType::VBlank);
 
 			//copy over scratch buffer to backbuffer
@@ -124,9 +136,9 @@ void PPU::m_hblank()	//mode 0
 		else
 		{
 			m_OAMReadAccessBlocked = true;
-			m_newMode = 2;
-			//STAT &= 0b11111100;
-			//STAT |= 0b00000010;
+			//m_newMode = 2;
+			STAT &= 0b11111100;
+			STAT |= 0b00000010;
 		}
 	}
 }
@@ -145,6 +157,7 @@ void PPU::m_vblank()	//mode 1
 	{
 		m_modeCycleDiff = 0;
 		LY++;
+		m_comparisonLY++;
 		if (LY == 1)
 		{
 			if (m_totalFrameCycles != 70224)
@@ -152,6 +165,7 @@ void PPU::m_vblank()	//mode 1
 			m_totalFrameCycles = 0;
 			m_windowLineCounter = 0;
 			LY = 0;				//go back to beginning
+			m_comparisonLY = 0;
 			m_latchingNewMode = true;
 			m_newMode = 2;
 			//STAT &= 0b11111100; STAT |= 0b00000010;
@@ -161,7 +175,7 @@ void PPU::m_vblank()	//mode 1
 
 void PPU::m_buggedOAMSearch()	//used when LCD first turns on - no oam scan is done
 {
-	m_VRAMWriteAccessBlocked = false; m_OAMWriteAccessBlocked = false;
+	m_VRAMWriteAccessBlocked = false; m_OAMWriteAccessBlocked = true;
 	m_VRAMReadAccessBlocked = false; m_OAMReadAccessBlocked = false;
 	m_modeCycleDiff++;
 	m_totalLineCycles++;
@@ -173,10 +187,10 @@ void PPU::m_buggedOAMSearch()	//used when LCD first turns on - no oam scan is do
 		m_buggyMode2 = false;
 		m_spritesChecked = 0;
 		m_spriteBufferIndex = 0;
-		m_latchingNewMode = true;
-		m_newMode = 3;
-		//STAT &= 0b11111100;
-		//STAT |= 0b00000011;
+		//m_latchingNewMode = true;
+		//m_newMode = 3;
+		STAT &= 0b11111100;
+		STAT |= 0b00000011;
 		m_fetcherX = 0;
 		m_lcdXCoord = 0;
 		m_fetcherStage = FetcherStage::FetchTileNumber;
@@ -216,10 +230,10 @@ void PPU::m_OAMSearch()	//mode 2
 			m_OAMWriteAccessBlocked = false;	//not sure about this..
 			m_spritesChecked = 0;
 			m_spriteBufferIndex = 0;
-			m_latchingNewMode = true;
-			m_newMode = 3;
-			//STAT &= 0b11111100;
-			//STAT |= 0b00000011;
+			//m_latchingNewMode = true;
+			//m_newMode = 3;
+			STAT &= 0b11111100;
+			STAT |= 0b00000011;
 			m_fetcherX = 0;
 			m_lcdXCoord = 0;
 			m_fetcherStage = FetcherStage::FetchTileNumber;
@@ -351,9 +365,10 @@ void PPU::m_LCDTransfer()	//mode 3
 		while (m_spriteFIFO.size() > 0)
 			m_spriteFIFO.pop_front();
 		m_modeCycleDiff = 0;
-		m_latchingNewMode = true;
-		m_newMode = 0;
-		//STAT &= 0b11111100;
+		m_OAMReadAccessBlocked = false;	//maybe write is unblocked on the same cycle
+		//m_latchingNewMode = true;
+		//m_newMode = 0;
+		STAT &= 0b11111100;
 	}
 }
 
@@ -471,29 +486,6 @@ void PPU::m_pushToFIFO()
 		}
 		if (m_spriteFetchInProgress)				//if fetching sprite tiles, instead of resetting to bg fetching - go to sprite fetching
 		{
-			if (!m_spriteStartupPenaltyApplied)
-			{
-				m_spriteStartupPenaltyApplied = true;
-				int posMod8 = ((int)m_spriteBuffer[m_consideredSpriteIndex].x % 8);
-				//add extra delay cycles to sprite push
-				int extraDelayCycles = 0;
-				switch (posMod8 % 8)
-				{
-				case 0: extraDelayCycles = 5; break;
-				case 1: extraDelayCycles = 4; break;
-				case 2:extraDelayCycles = 3; break;
-				case 3:extraDelayCycles = 2; break;
-				case 4:extraDelayCycles = 1; break;
-				case 5: case 6: case 7:
-					extraDelayCycles = 0; break;
-				}
-				extraDelayCycles -= (SCX & 0b111);
-				if (extraDelayCycles < 0)
-					extraDelayCycles = 0;
-				if ((int)m_spriteBuffer[m_consideredSpriteIndex].x < 8)
-					extraDelayCycles--;	//idk
-				m_spritePenaltyCycles = extraDelayCycles;
-			}
 			m_modeCycleDiff = 1;
 			m_fetcherStage = FetcherStage::SpriteFetchTileNumber;
 		}
@@ -685,12 +677,15 @@ void PPU::write(uint16_t address, uint8_t value)
 		//check if LCD is being (re)enabled (when LCD becomes disabled the STAT reads out mode 0 so mode has to be corrected)
 		if (!((LCDC >> 7) & 0b1) && ((value >> 7) & 0b1))
 		{
+			m_comparisonLY = 0;
 			LY = 0;
 			m_modeCycleDiff = 0;
 			m_totalLineCycles = 0;
 			m_totalFrameCycles = 0;
 			m_buggyMode2 = true;
 			m_islcdOnLine = true;
+			m_ppuLateCycles = 0;
+			m_OAMWriteAccessBlocked=false;
 			m_checkSTATInterrupt();	//i have no idea why, but this fixes the lyc on/off test
 		}
 		LCDC=value;
