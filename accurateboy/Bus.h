@@ -22,8 +22,8 @@ public:
 
 	void setInTestingMode();
 
-	uint8_t read(uint16_t address);
-	void write(uint16_t address, uint8_t value);
+	uint8_t read(uint16_t address, bool doTick=true);
+	void write(uint16_t address, uint8_t value, bool doTick=true);
 
 	void tick();
 private:

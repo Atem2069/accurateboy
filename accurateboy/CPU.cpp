@@ -522,6 +522,9 @@ void CPU::_incR16()
 	uint16_t regContents = getR16(regIndex, 1);
 	setR16(regIndex, regContents + 1, 1);
 	m_bus->tick();	//some internal cycle
+
+	if (regContents >= 0xFE00 && regContents <= 0xFEFF)
+		Logger::getInstance()->msg(LoggerSeverity::Warn, "OAM corruption triggered - unimplemented");
 }
 
 void CPU::_decR16()
@@ -530,6 +533,9 @@ void CPU::_decR16()
 	uint16_t regContents = getR16(regIndex, 1);
 	setR16(regIndex, regContents - 1, 1);
 	m_bus->tick();	//some internal cycle
+
+	if (regContents >= 0xFE00 && regContents <= 0xFEFF)
+		Logger::getInstance()->msg(LoggerSeverity::Warn, "OAM corruption triggered - unimplemented");
 }
 
 void CPU::_incR8()

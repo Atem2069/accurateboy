@@ -25,9 +25,10 @@ Bus::~Bus()
 
 }
 
-uint8_t Bus::read(uint16_t address)
+uint8_t Bus::read(uint16_t address, bool doTick)
 {
-	tick();
+	if(doTick)
+		tick();
 	if (m_OAMDMAInProgress)
 	{
 		//DMG: ROM+SRAM+WRAM share a bus, VRAM shares another bus.
@@ -48,9 +49,10 @@ uint8_t Bus::read(uint16_t address)
 	return internalRead(address);
 }
 
-void Bus::write(uint16_t address, uint8_t value)
+void Bus::write(uint16_t address, uint8_t value, bool doTick)
 {
-	tick();
+	if(doTick)
+		tick();
 	if (m_OAMDMAInProgress)
 	{
 		//This is SLOW:

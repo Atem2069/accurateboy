@@ -105,15 +105,21 @@ void PPU::m_hblank()	//mode 0
 	m_totalLineCycles++;
 	m_totalFrameCycles++;
 	if ((!m_islcdOnLine && m_totalLineCycles == 450))
+	{
+		m_comparisonLY = 255;
 		LY++;
+	}
 	if ((m_islcdOnLine && m_totalLineCycles == 446))
+	{
+		m_comparisonLY = 255;
 		LY++;
+	}
 	if ((m_totalLineCycles == 456) || (m_islcdOnLine && m_totalLineCycles==452))	//enter line takes 456 t cycles (except for lcdon line 0)
 	{
 		if (m_islcdOnLine)
 			m_totalFrameCycles += 4;
-		m_comparisonLY++;
-		m_lyDelay = true;
+		m_comparisonLY = LY;
+		//m_lyDelay = true;
 		m_islcdOnLine = false;
 		//m_latchingNewMode = true;
 		m_modeCycleDiff = 0;
@@ -189,6 +195,7 @@ void PPU::m_buggedOAMSearch()	//used when LCD first turns on - no oam scan is do
 		m_spriteBufferIndex = 0;
 		//m_latchingNewMode = true;
 		//m_newMode = 3;
+		m_OAMReadAccessBlocked = true;
 		STAT &= 0b11111100;
 		STAT |= 0b00000011;
 		m_fetcherX = 0;
