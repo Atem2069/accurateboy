@@ -24,6 +24,7 @@ public:
 
 	uint8_t read(uint16_t address, bool doTick=true);
 	void write(uint16_t address, uint8_t value, bool doTick=true);
+	void doIncCorruption();
 
 	void tick();
 private:

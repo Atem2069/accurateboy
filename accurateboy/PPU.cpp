@@ -726,6 +726,76 @@ void PPU::DMAForceWrite(uint16_t address, uint8_t value)
 		Logger::getInstance()->msg(LoggerSeverity::Error, std::format("Invalid DMA write to address {:#x}", address));
 }
 
+void PPU::doWriteCorruption()
+{
+	if ((STAT & 0b11) != 2)
+	{
+		Logger::getInstance()->msg(LoggerSeverity::Error, "Attempted to do OAM corruption outside of OAM scan!!!");
+		return;
+	}
+
+	//oam corruption when cpu tries to write oam - ((a ^ c) & (b ^ c)) ^ c
+	int memCyclesIntoScan = (m_totalLineCycles-1) / 4;	//each m-cycle one row of 8 bytes is read
+	int lastRowIndex = memCyclesIntoScan - 1;
+	if (memCyclesIntoScan < 1)						//can't do corruption if it's the first row being scanned
+		return;
+	//this is pretty horrible, lol
+	uint8_t aLow = m_OAM[(memCyclesIntoScan * 8)], aHigh = m_OAM[(memCyclesIntoScan * 8) + 1];
+	uint8_t bLow = m_OAM[(lastRowIndex * 8)], bHigh = m_OAM[(lastRowIndex * 8) + 1];
+	uint8_t cLow = m_OAM[(lastRowIndex * 8) + 4], cHigh = m_OAM[(lastRowIndex * 8) + 5];
+
+	uint16_t a = (aHigh << 8) | aLow;	//first word in current row
+	uint16_t b = (bHigh << 8) | bLow;	//first word in preceding row
+	uint16_t c = (cHigh << 8) | cLow;	//third word in preceding row
+
+	a = ((a ^ c) & (b ^ c)) ^ c;
+	m_OAM[(memCyclesIntoScan * 8)] = (a & 0xFF);
+	m_OAM[(memCyclesIntoScan * 8) + 1] = ((a & 0xFF00) >> 8);
+
+	//copy over last 3 words
+	m_OAM[(memCyclesIntoScan * 8) + 2] = m_OAM[(lastRowIndex * 8) + 2];
+	m_OAM[(memCyclesIntoScan * 8) + 3] = m_OAM[(lastRowIndex * 8) + 3];
+	m_OAM[(memCyclesIntoScan * 8) + 4] = cLow;
+	m_OAM[(memCyclesIntoScan * 8) + 5] = cHigh;
+	m_OAM[(memCyclesIntoScan * 8) + 6] = m_OAM[(lastRowIndex * 8) + 6];
+	m_OAM[(memCyclesIntoScan * 8) + 7] = m_OAM[(lastRowIndex * 8) + 7];
+}
+
+void PPU::doReadCorruption()
+{
+	if ((STAT & 0b11) != 2)
+	{
+		Logger::getInstance()->msg(LoggerSeverity::Error, "Attempted to do OAM corruption outside of OAM scan!!!");
+		return;
+	}
+	//different corruption pattern when cpu tries to read oam - b | (a & c)
+	int memCyclesIntoScan = (m_totalLineCycles-1) / 4;	//each m-cycle one row of 8 bytes is read
+	int lastRowIndex = memCyclesIntoScan - 1;
+	if (memCyclesIntoScan < 1)						//can't do corruption if it's the first row being scanned
+		return;
+
+	//this is pretty horrible, lol
+	uint8_t aLow = m_OAM[(memCyclesIntoScan * 8)], aHigh = m_OAM[(memCyclesIntoScan * 8) + 1];
+	uint8_t bLow = m_OAM[(lastRowIndex * 8)], bHigh = m_OAM[(lastRowIndex * 8) + 1];
+	uint8_t cLow = m_OAM[(lastRowIndex * 8) + 4], cHigh = m_OAM[(lastRowIndex * 8) + 5];
+
+	uint16_t a = (aHigh << 8) | aLow;	//first word in current row
+	uint16_t b = (bHigh << 8) | bLow;	//first word in preceding row
+	uint16_t c = (cHigh << 8) | cLow;	//third word in preceding row
+
+	a = b | (a & c);
+	m_OAM[(memCyclesIntoScan * 8)] = (a & 0xFF);
+	m_OAM[(memCyclesIntoScan * 8) + 1] = ((a & 0xFF00) >> 8);
+
+	//copy over last 3 words
+	m_OAM[(memCyclesIntoScan * 8) + 2] = m_OAM[(lastRowIndex * 8) + 2];
+	m_OAM[(memCyclesIntoScan * 8) + 3] = m_OAM[(lastRowIndex * 8) + 3];
+	m_OAM[(memCyclesIntoScan * 8) + 4] = cLow;	
+	m_OAM[(memCyclesIntoScan * 8) + 5] = cHigh;
+	m_OAM[(memCyclesIntoScan * 8) + 6] = m_OAM[(lastRowIndex * 8) + 6];
+	m_OAM[(memCyclesIntoScan * 8) + 7] = m_OAM[(lastRowIndex * 8) + 7];
+}
+
 bool PPU::m_getLCDEnabled()
 {
 	return (LCDC >> 7) & 0b1;

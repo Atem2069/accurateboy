@@ -523,11 +523,11 @@ void CPU::_incR16()
 	setR16(regIndex, regContents + 1, 1);
 	m_bus->tick();	//some internal cycle
 
-	if (regContents >= 0xFE00 && regContents <= 0xFEFF) [[unlikely]]
+	if (regContents >= 0xFE00 && regContents <= 0xFEFF)
 	{
 		uint8_t ppuStat = m_bus->read(REG_STAT, false);
-		if((ppuStat & 0b11)==2)
-			Logger::getInstance()->msg(LoggerSeverity::Warn, "OAM corruption triggered - unimplemented");
+		if ((ppuStat & 0b11) == 2)
+			m_bus->doIncCorruption();
 	}
 }
 
@@ -538,11 +538,11 @@ void CPU::_decR16()
 	setR16(regIndex, regContents - 1, 1);
 	m_bus->tick();	//some internal cycle
 
-	if (regContents >= 0xFE00 && regContents <= 0xFEFF) [[unlikely]]
+	if (regContents >= 0xFE00 && regContents <= 0xFEFF)
 	{
 		uint8_t ppuStat = m_bus->read(REG_STAT, false);
 		if ((ppuStat & 0b11) == 2)
-			Logger::getInstance()->msg(LoggerSeverity::Warn, "OAM corruption triggered - unimplemented");
+			m_bus->doIncCorruption();
 	}
 }
 

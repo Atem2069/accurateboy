@@ -47,6 +47,8 @@ public:
 	uint8_t read(uint16_t address);
 	void write(uint16_t address, uint8_t value);
 	void DMAForceWrite(uint16_t address, uint8_t value);
+	void doWriteCorruption();
+	void doReadCorruption();
 	uint32_t* getDisplayBuffer();
 
 	uint8_t getSTATMode();
