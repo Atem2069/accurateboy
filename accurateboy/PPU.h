@@ -48,6 +48,8 @@ public:
 	void write(uint16_t address, uint8_t value);
 	void DMAForceWrite(uint16_t address, uint8_t value);
 	uint32_t* getDisplayBuffer();
+
+	uint8_t getSTATMode();
 private:
 	void m_checkSTATInterrupt();
 	void m_hblank();

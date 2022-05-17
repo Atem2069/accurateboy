@@ -46,6 +46,11 @@ uint8_t Bus::read(uint16_t address, bool doTick)
 			return 0xFF;
 		}
 	}
+
+	//oam corruption
+	if (address >= 0xFE00 && address <= 0xFEFF && m_ppu->getSTATMode() == 2)
+		Logger::getInstance()->msg(LoggerSeverity::Warn, "Unhandled OAM read corruption");
+
 	return internalRead(address);
 }
 
@@ -73,6 +78,9 @@ void Bus::write(uint16_t address, uint8_t value, bool doTick)
 		}
 	}
 
+	//oam corruption
+	if (address >= 0xFE00 && address <= 0xFEFF && m_ppu->getSTATMode() == 2)
+		Logger::getInstance()->msg(LoggerSeverity::Warn, "Unhandled OAM write corruption");
 
 	internalWrite(address, value);
 }

@@ -770,3 +770,8 @@ uint32_t* PPU::getDisplayBuffer()
 {
 	return m_backBuffer;
 }
+
+uint8_t PPU::getSTATMode()
+{
+	return STAT & 0b11;
+}
