@@ -25,13 +25,16 @@ public:
 	APU();
 	~APU();
 
-	void step();
+	void step(uint16_t newDivider);
 	void playSamples();
 
 	void writeIORegister(uint16_t address, uint8_t value);
 	uint8_t readIORegister(uint16_t address);
 
 private:
+
+	uint16_t m_clockDivider = 0;
+
 	Channel m_channels[4];
 	uint8_t NR50 = 0;
 	uint8_t NR51 = 0;
@@ -106,11 +109,6 @@ private:
 	bool chan4_envelopeAdd = false;
 	uint8_t chan4_envelopePeriod = 0;
 	uint8_t chan4_envelopeTimer = 0;
-
-	//frame sequencer
-	unsigned long frameSeq_cycleDiff = 0;
-	unsigned long frameSeq_count = 0;
-	bool frameSeq_clockIsNew = false;
 
 	//mixing/sampling
 	unsigned long mixer_cycleDiff = 0;

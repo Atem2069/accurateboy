@@ -23,7 +23,7 @@ APU::~APU()
 	SDL_Quit();
 }
 
-void APU::step()
+void APU::step(uint16_t newDivider)
 {
 	//steps a single t-cycle
 	chan2_freqTimer--;	//cycle diff is measured in m-cycles, but frequency timer decrements per t-cycle.
@@ -76,22 +76,15 @@ void APU::step()
 		}
 	}
 
-	//frame sequencer: 2048 m-cycles.
-	frameSeq_cycleDiff += 1;
-	if (frameSeq_cycleDiff >= 8192)
-	{
-		frameSeq_cycleDiff -= 8192;
-		frameSeq_count++;
-		frameSeq_clockIsNew = true;
-	}
+	//bit 12: 512hz, bit 13: 256hz, bit 14: 128hz, bit 15: 64hz
 
-	if (frameSeq_count % 2 == 0 && frameSeq_clockIsNew)	//length counters
+	if (((m_clockDivider >> 13) & 0b1) && !((newDivider >> 13) & 0b1))	//length counters
 		clockLengthCounters();
 
-	if (frameSeq_count % 8 == 7 && frameSeq_clockIsNew)	//envelope function
+	if (((m_clockDivider >> 15) & 0b1) && !((newDivider >> 15) & 0b1))	//envelope function
 		clockEnvelope();
 
-	if (frameSeq_count % 4 == 2 && frameSeq_clockIsNew)
+	if (((m_clockDivider >> 14) & 0b1) && !((newDivider >> 14) & 0b1))
 	{
 		if (chan1_sweepPeriod != 0)
 		{
@@ -130,7 +123,7 @@ void APU::step()
 		}
 	}
 
-	frameSeq_clockIsNew = false;
+	m_clockDivider = newDivider;
 
 	//mixing
 	mixer_cycleDiff += 96000;

@@ -217,7 +217,7 @@ void Bus::tick()
 		m_timer->step();
 		m_serial->step(m_timer->getClockDivider());
 		if(!m_testingDisableAPU)
-			m_apu->step();
+			m_apu->step(m_timer->getClockDivider());
 	}
 
 	if (m_OAMDMAInProgress)
