@@ -5,8 +5,6 @@ CPU::CPU(std::shared_ptr<Bus>& bus, std::shared_ptr<InterruptManager>& interrupt
 	m_bus = bus;
 	m_interruptManager = interruptManager;
 	m_initIO();	//init CPU and I/O registers to correct values
-	//PC = 0x100;
-	//m_bus->write(0xFF50, 1);
 }
 
 CPU::~CPU()
@@ -17,15 +15,6 @@ CPU::~CPU()
 void CPU::step()
 {
 	m_lastPC = PC;
-	/*if (!m_halted)
-		m_executeInstruction();
-	else
-	{
-		m_bus->tick();
-		if (m_interruptManager->getActiveInterrupt(false) != InterruptType::None)
-			m_dispatchInterrupt();
-	}*/
-
 	m_lastOpcode = m_fetch();
 
 	if (m_interruptManager->getActiveInterrupt(false) != InterruptType::None)
@@ -36,7 +25,7 @@ void CPU::step()
 	if(!m_halted)
 		m_executeInstruction();
 
-	if (m_EIRequested)	//odd hack, essentially only re-enable after an instruction has passed. TODO: EI and then DI overrides the enable
+	if (m_EIRequested)	//odd hack, essentially only re-enable after an instruction has passed. (correct behaviour would be after 1 cycle has passed)
 	{
 		m_instrSinceEI += 1;
 		if (m_instrSinceEI > 1)
@@ -70,8 +59,6 @@ void CPU::m_dispatchInterrupt()
 
 void CPU::m_executeInstruction()
 {
-	//uint8_t opcode = m_fetch();
-	//m_lastOpcode = opcode;
 	uint8_t opcode = m_lastOpcode;
 	switch (opcode)				//opcodes w/o any special register encoding
 	{
@@ -159,47 +146,6 @@ void CPU::m_initIO()
 
 	//DIV seems to tick before the first instruction fetch
 	m_bus->tick();
-
-	/*
-	* Will be re-enabled when emulator is more fleshed out.
-	bool disableBootRom = Config::GB.System.useBootRom;
-	if (disableBootRom)
-	{
-		Logger::getInstance()->msg(LoggerSeverity::Info, "Boot ROM was disabled - initializing directly. Custom DMG palettes will not work.");
-		m_bus->write(0xFF50, 1);
-		bool cartIsCGB = (m_bus->read(CART_COMPAT) == 0xC0 || (m_bus->read(CART_COMPAT) == 0x80 && !Config::GB.System.DmgMode));	//0xC0: CGB only. 0x80: CGB and DMG
-
-		if (cartIsCGB)
-		{
-			//https://gbdev.io/pandocs/Power_Up_Sequence.html (Hardware registers)
-			AF.reg = 0x1180;
-			BC.reg = 0x0000;
-			DE.reg = 0xFF56;
-			HL.reg = 0x000D;
-		}
-		else
-		{
-			m_bus->write(REG_KEY0, 0x04);	//enable dmg compatibility mode
-			AF.reg = 0x01B0;
-			BC.reg = 0x0013;
-			DE.reg = 0x00D8;
-			HL.reg = 0x014D;
-
-			//init custom palette
-			uint8_t paletteData[] = { 0b00001111,0b00001010,0b11101011,0b00100001,0b01100111,0b00100101,0b00000101,0b00011101 };	//dmg palette converted to RGB555(+1)
-			m_bus->write(REG_BGPI, 0b10000000);	//set auto increment 
-			m_bus->write(REG_OBPI, 0b10000000);
-			for (int i = 0; i < sizeof(paletteData) / sizeof(uint8_t); i++)
-			{
-				m_bus->write(REG_BGPD, paletteData[i]);
-				m_bus->write(REG_OBPD, paletteData[i]);
-			}
-		}
-		
-		SP.reg = 0xFFFE;
-		PC = 0x100;
-	}
-	*/
 }
 
 
@@ -236,19 +182,6 @@ void CPU::m_set8BitArithmeticFlags(uint8_t opA, uint8_t opB, bool carryIn, bool 
 		m_setSubtractFlag(false);
 		m_setZeroFlag((uint8_t)(opA+opB+carryInVal)==0);
 	}
-
-	/*if (subtract)
-	{
-		opB = ~(opB)+1;
-		carryInVal = ~(carryInVal)+1;
-	}
-
-	m_setZeroFlag((opA + opB + carryInVal) == 0);
-	m_setSubtractFlag(subtract);
-	m_setHalfCarryFlag(((opA & 0xF) + (opB & 0xF) + (carryInVal & 0xF)) > 0xF);
-	m_setCarryFlag((opA + opB + carryIn) < opA);	//double check this
-	//if (subtract)
-	//	m_setCarryFlag(!m_getCarryFlag());			//double check this too*/
 }
 
 void CPU::m_set8BitLogicalFlags(uint8_t value, bool AND)
@@ -451,7 +384,7 @@ void CPU::_JRUnconditional()
 
 void CPU::_JRConditional()
 {
-	int8_t offset = (int8_t)m_fetch();				//instruction still takes 8 t-cycles if branch not taken
+	int8_t offset = (int8_t)m_fetch();	
 	uint8_t condition = (m_lastOpcode >> 3) & 0b11;
 	if (checkConditionsMet(condition))
 	{
