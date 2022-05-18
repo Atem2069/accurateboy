@@ -1,7 +1,8 @@
 # accurateboy
 
 Highly accurate Game Boy emulator, with a T-Cycle accurate Pixel FIFO implementation.
-![Pocket demo](img/pocketdemo.png)
+[![Pocket demo](img/pocketdemo.png)](https://www.youtube.com/watch?v=pcwFfXIl_8A)
+
 
 # Testing
 
