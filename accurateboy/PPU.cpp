@@ -157,7 +157,10 @@ void PPU::m_vblank()	//mode 1
 	m_totalFrameCycles++;
 
 	if (m_modeCycleDiff == 4 && LY == 153)
+	{
 		LY = 0;
+		m_comparisonLY = 0;
+	}
 
 	if (m_modeCycleDiff == 456)
 	{
