@@ -231,6 +231,11 @@ void CPU::m_setSubtractFlag(bool value)
 uint8_t CPU::m_fetch()
 {
 	uint8_t val = m_bus->read(PC++);
+	if (m_haltBug)					//halt bug: pc fails to increment after executing next instruction
+	{
+		m_haltBug = false;
+		PC--;
+	}
 	return val;
 }
 
@@ -608,6 +613,16 @@ void CPU::_DAA()
 
 void CPU::_halt()
 {
+	if (!m_interruptManager->getInterruptsEnabled())
+	{
+		uint8_t IF = m_bus->read(REG_IFLAGS, false);
+		uint8_t IE = m_bus->read(REG_IE, false);
+		if ((IF&IE&0x1F)!=0)	//meh... IF&IE!=0,IME=0 causes halt bug (CPU doesn't halt)
+		{
+			m_haltBug = true;
+			return;
+		}
+	}
 	m_halted = true;
 }
 
