@@ -142,6 +142,7 @@ void PPU::m_hblank()	//mode 0
 		else
 		{
 			m_OAMReadAccessBlocked = true;
+			m_OAMWriteAccessBlocked = true;
 			//m_newMode = 2;
 			STAT &= 0b11111100;
 			STAT |= 0b00000010;
@@ -184,7 +185,7 @@ void PPU::m_vblank()	//mode 1
 
 void PPU::m_buggedOAMSearch()	//used when LCD first turns on - no oam scan is done
 {
-	m_VRAMWriteAccessBlocked = false; m_OAMWriteAccessBlocked = true;
+	m_VRAMWriteAccessBlocked = false; m_OAMWriteAccessBlocked = false;
 	m_VRAMReadAccessBlocked = false; m_OAMReadAccessBlocked = false;
 	m_modeCycleDiff++;
 	m_totalLineCycles++;
@@ -199,6 +200,7 @@ void PPU::m_buggedOAMSearch()	//used when LCD first turns on - no oam scan is do
 		//m_latchingNewMode = true;
 		//m_newMode = 3;
 		m_OAMReadAccessBlocked = true;
+		m_OAMWriteAccessBlocked = true;
 		STAT &= 0b11111100;
 		STAT |= 0b00000011;
 		m_fetcherX = 0;
@@ -376,6 +378,7 @@ void PPU::m_LCDTransfer()	//mode 3
 			m_spriteFIFO.pop_front();
 		m_modeCycleDiff = 0;
 		m_OAMReadAccessBlocked = false;	//maybe write is unblocked on the same cycle
+		m_OAMWriteAccessBlocked = false;
 		//m_latchingNewMode = true;
 		//m_newMode = 0;
 		STAT &= 0b11111100;
