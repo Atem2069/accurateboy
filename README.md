@@ -14,6 +14,8 @@ Highly accurate Game Boy emulator, with a T-Cycle accurate Pixel FIFO implementa
 | mem_timing |:heavy_check_mark: |
 | mem_timing-2 | :heavy_check_mark: |
 | dmg_sound | :x: |
+| halt_bug | :heavy_check_mark: |
+| oam_bug | :x: |
 
 ## mooneye-gb Suite
 
