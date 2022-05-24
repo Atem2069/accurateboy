@@ -185,13 +185,20 @@ void APU::writeIORegister(uint16_t address, uint8_t value)
 			chan1_sweepNegate = (value >> 3) & 0b1;
 		}
 		if (address - 0xFF10 == 1)
+		{
 			chan1_lengthCounter = 64 - (value & 0b00111111);
+			if (!chan1_lengthCounter)
+				NR52 &= 0b11111110;
+		}
 		if (address - 0xFF10 == 2)
 		{
 			chan1_volume = ((value >> 4) & 0xF);
 			chan1_envelopePeriod = value & 0b111;
 			chan1_envelopeTimer = chan1_envelopePeriod;
 			chan1_envelopeAdd = ((value >> 3) & 0b1);
+
+			if (!((value >> 3) & 0b11111))
+				NR52 &= 0b11111110;
 		}
 		if (address - 0xFF10 == 4)
 		{
@@ -207,7 +214,7 @@ void APU::writeIORegister(uint16_t address, uint8_t value)
 				chan1_volume = ((m_channels[0].r[2] >> 4) & 0b1111);
 				chan1_envelopeTimer = chan1_envelopePeriod;
 
-				if (!(((m_channels[0].r[2]) >> 5) & 0b11111))
+				if (!(((m_channels[0].r[2]) >> 3) & 0b11111))
 					NR52 &= 0b11111110;
 
 			}
@@ -218,13 +225,21 @@ void APU::writeIORegister(uint16_t address, uint8_t value)
 	if (address >= 0xFF15 && address <= 0xFF19)
 	{
 		if (address - 0xFF15 == 1)
+		{
 			chan2_lengthCounter = 64 - (value & 0b00111111);
+			if (!chan2_lengthCounter)
+				NR52 &= 0b11111101;
+		}
 		if (address - 0xFF15 == 2)
 		{
 			chan2_volume = ((value >> 4) & 0xF);
 			chan2_envelopePeriod = value & 0b111;
 			chan2_envelopeTimer = chan2_envelopePeriod;
 			chan2_envelopeAdd = ((value >> 3) & 0b1);
+
+			if (!((value >> 3) & 0b11111))
+				NR52 &= 0b11111101;
+
 		}
 		if (address - 0xFF15 == 4)
 		{
@@ -240,7 +255,7 @@ void APU::writeIORegister(uint16_t address, uint8_t value)
 				chan2_volume = ((m_channels[1].r[2] >> 4) & 0b1111);
 				chan2_envelopeTimer = chan2_envelopePeriod;
 
-				if (!(((m_channels[1].r[2]) >> 5) & 0b11111))
+				if (!(((m_channels[1].r[2]) >> 3) & 0b11111))
 					NR52 &= 0b11111101;
 			}
 
@@ -251,7 +266,11 @@ void APU::writeIORegister(uint16_t address, uint8_t value)
 	if (address >= 0xFF1A && address <= 0xFF1E)
 	{
 		if (address - 0xFF1A == 1)
+		{
 			chan3_lengthCounter = 256 - value;	//chan 3 uses full 8-bit value for length load
+			if (!chan3_lengthCounter)
+				NR52 &= 0b11111011;
+		}
 		if ((address - 0xFF1A) == 0 && ((value >> 7) & 0b1) ==0)	//DAC=0 disables channel in NR52
 			NR52 &= 0b11111011;
 		if ((address - 0xFF1A) == 2)
@@ -267,6 +286,10 @@ void APU::writeIORegister(uint16_t address, uint8_t value)
 			uint8_t freqHigh = m_channels[2].r[4] & 0b00000111;
 			uint16_t newFreq = (freqHigh << 8) | freqLow;
 			chan3_freqTimer = (2048 - newFreq) * 2;
+
+			if (!((m_channels[2].r[0] >> 7) & 0b1))
+				NR52 &= 0b11111011;
+
 		}
 		m_channels[2].r[address - 0xFF1A] = value;
 	}
@@ -275,6 +298,8 @@ void APU::writeIORegister(uint16_t address, uint8_t value)
 		if (address - 0xFF1F == 1)
 		{
 			chan4_lengthCounter = 64 - (value & 0b00111111);
+			if (!chan4_lengthCounter)
+				NR52 &= 0b11110111;
 		}
 		if (address - 0xFF1F == 2)
 		{
@@ -282,6 +307,9 @@ void APU::writeIORegister(uint16_t address, uint8_t value)
 			chan4_envelopePeriod = value & 0b111;
 			chan4_envelopeTimer = chan4_envelopePeriod;
 			chan4_envelopeAdd = ((value >> 3) & 0b1);
+
+			if (!((value >> 3) & 0b11111))
+				NR52 &= 0b11110111;
 		}
 		if (address - 0xFF1F == 3)
 		{
@@ -298,6 +326,10 @@ void APU::writeIORegister(uint16_t address, uint8_t value)
 			//load frequency timer
 			int divisor = chan4_divisorMapping[chan4_divisorCode];
 			chan4_freqTimer = divisor << chan4_shiftAmount;
+
+			if (!(((m_channels[3].r[2]) >> 3) & 0b11111))
+				NR52 &= 0b11110111;
+
 		}
 		m_channels[3].r[address - 0xFF1F] = value;
 	}
@@ -353,48 +385,62 @@ void APU::m_clearRegisters()
 
 void APU::clockLengthCounters()
 {
+
+	bool chan1_enabled = true;// (NR52 & 0b1);
+	bool chan2_enabled = true;// ((NR52 >> 1) & 0b1);
+	bool chan3_enabled = true;// ((NR52 >> 2) & 0b1);
+	bool chan4_enabled = true;// ((NR52 >> 3) & 0b1);
+
 	//clock length counters
 	bool chan1_lengthEnabled = (m_channels[0].r[4] >> 6) & 0b1;
-	if (chan1_lengthEnabled)
+	if (chan1_lengthEnabled && chan1_enabled)
 	{
 		if (chan1_lengthCounter != 0)
-			chan1_lengthCounter--;
-		if (chan1_lengthCounter == 0)
 		{
-			NR52 &= 0b11111110;	//clear channel 1 enabled bit
+			chan1_lengthCounter--;
+			if (chan1_lengthCounter == 0)
+			{
+				NR52 &= 0b11111110;	//clear channel 1 enabled bit
+			}
 		}
 	}
 
 	bool chan2_lengthEnabled = (m_channels[1].r[4] >> 6) & 0b1;
-	if (chan2_lengthEnabled)
+	if (chan2_lengthEnabled && chan2_enabled)
 	{
 		if (chan2_lengthCounter != 0)
-			chan2_lengthCounter--;
-		if (chan2_lengthCounter == 0)
 		{
-			NR52 &= 0b11111101;	//clear channel 2 enabled bit
+			chan2_lengthCounter--;
+			if (chan2_lengthCounter == 0)
+			{
+				NR52 &= 0b11111101;	//clear channel 2 enabled bit
+			}
 		}
 	}
 
 	bool chan3_lengthEnabled = (m_channels[2].r[4] >> 6) & 0b1;
-	if (chan3_lengthEnabled)
+	if (chan3_lengthEnabled && chan3_enabled)
 	{
 		if (chan3_lengthCounter != 0)
-			chan3_lengthCounter--;
-		if (chan3_lengthCounter == 0)
 		{
-			NR52 &= 0b11111011;	//clear chan 3 bit
+			chan3_lengthCounter--;
+			if (chan3_lengthCounter == 0)
+			{
+				NR52 &= 0b11111011;	//clear chan 3 bit
+			}
 		}
 	}
 
 	bool chan4_lengthEnabled = (m_channels[3].r[4] >> 6) & 0b1;
-	if (chan4_lengthEnabled)
+	if (chan4_lengthEnabled && chan4_enabled)
 	{
 		if (chan4_lengthCounter != 0)
-			chan4_lengthCounter--;
-		if (chan4_lengthCounter == 0)
 		{
-			NR52 &= 0b11110111;	//clear chan 4 bit
+			chan4_lengthCounter--;
+			if (chan4_lengthCounter == 0)
+			{
+				NR52 &= 0b11110111;	//clear chan 4 bit
+			}
 		}
 	}
 }
