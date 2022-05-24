@@ -173,8 +173,8 @@ void APU::playSamples()
 
 void APU::writeIORegister(uint16_t address, uint8_t value)
 {
-	//this is horrible: check if apu disabled - and only allow writes to wavetable or NR52
-	if (!((NR52 >> 7) & 0b1) && address < 0xFF30 && address != 0xFF26)
+	//this is horrible: check if apu disabled - and only allow writes to wavetable or NR52. even weirder: NR41 (FF20) is fully writeable
+	if (!((NR52 >> 7) & 0b1) && address < 0xFF30 && address != 0xFF26 && address != 0xFF20)
 		return;
 	if (address >= 0xFF10 && address <= 0xFF14)
 	{
@@ -342,7 +342,12 @@ void APU::writeIORegister(uint16_t address, uint8_t value)
 		NR52 &= 0b01111111;
 		NR52 |= (value & 0b10000000);
 		if (!((NR52 >> 7) & 0b1))
+		{
+			//weird hack: NR41 doesn't get cleared
+			uint8_t lastNR41 = m_channels[3].r[1];
 			m_clearRegisters();
+			m_channels[3].r[1] = lastNR41;
+		}
 	}
 	if (address >= 0xFF30 && address <= 0xFF3F)
 		m_waveRAM[address - 0xFF30] = value;
