@@ -390,6 +390,9 @@ void APU::m_clearRegisters()
 
 void APU::clockLengthCounters()
 {
+	if (!((NR52 >> 7) & 0b1))	//don't clock length if apu not on
+		return;
+
 
 	bool chan1_enabled = true;// (NR52 & 0b1);
 	bool chan2_enabled = true;// ((NR52 >> 1) & 0b1);

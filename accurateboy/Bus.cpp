@@ -235,8 +235,16 @@ void Bus::tick()
 	}
 }
 
+void Bus::setDMAPaused(bool paused)
+{
+	m_DMAPaused = paused;
+}
+
 void Bus::m_transferDMAByte()
 {
+	if (m_DMAPaused)	//probably not completely accurate because what happens if CPU halts while initiating new DMA??
+		return;			//i think it should do old dma for a cycle (as usual) after halting then switch to new dma.^^
+
 	if (m_OAMDMAWaitCycles == 1)
 		m_OAMDMAInProgress = false;
 	uint16_t offset = (m_OAMDMASrc & 0xFF);

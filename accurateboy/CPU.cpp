@@ -55,6 +55,7 @@ void CPU::m_dispatchInterrupt()
 		m_lastOpcode = m_fetch();
 	}
 	m_halted = false;
+	m_bus->setDMAPaused(false);
 }
 
 void CPU::m_executeInstruction()
@@ -624,6 +625,7 @@ void CPU::_halt()
 		}
 	}
 	m_halted = true;
+	m_bus->setDMAPaused(true);
 }
 
 void CPU::_ldR8()
