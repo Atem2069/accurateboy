@@ -77,6 +77,9 @@ private:
 	bool m_islcdOnLine = false;	//maybe could optimise this out?^^
 	int m_ppuLateCycles = 0;
 
+	//mode 2, latched sprite size
+	bool m2_latchedSprite8x16 = false;
+
 	//stat interrupt
 	bool m_lastStatState = false;
 	bool m_lyDelay = false;
@@ -84,6 +87,7 @@ private:
 
 	//stat mode switching
 	bool m_latchingNewMode = false;
+	int m_modeSwitchCycles = 0;
 	uint8_t m_newMode = 0;
 
 	//lcdc bits

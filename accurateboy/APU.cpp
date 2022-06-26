@@ -207,6 +207,16 @@ void APU::writeIORegister(uint16_t address, uint8_t value)
 				NR52 |= 0b00000001;	//re-enable channel
 				if (chan1_lengthCounter == 0)
 					chan1_lengthCounter = 64;
+
+				if (((value >> 6) & 0b1) && !((m_channels[0].r[4] >> 6) & 0b1) && chan1_lengthCounter!=64)
+				{
+					//((m_clockDivider >> 13) & 0b1) && !((newDivider >> 13) & 0b1)
+					int lastDivBit = ((m_clockDivider >> 13) & 0b1);
+					int newDivBit = (((m_clockDivider + 1) >> 13) & 0b1);
+					if(!lastDivBit || newDivBit)
+						chan1_lengthCounter--;
+				}
+
 				uint8_t freqLow = m_channels[0].r[3];
 				uint8_t freqHigh = m_channels[0].r[4] & 0b00000111;
 				uint16_t newFreq = (freqHigh << 8) | freqLow;
@@ -214,7 +224,7 @@ void APU::writeIORegister(uint16_t address, uint8_t value)
 				chan1_volume = ((m_channels[0].r[2] >> 4) & 0b1111);
 				chan1_envelopeTimer = chan1_envelopePeriod;
 
-				if (!(((m_channels[0].r[2]) >> 3) & 0b11111))
+				if ((!(((m_channels[0].r[2]) >> 3) & 0b11111)) || chan1_lengthCounter == 0)
 					NR52 &= 0b11111110;
 
 			}
@@ -248,6 +258,15 @@ void APU::writeIORegister(uint16_t address, uint8_t value)
 				NR52 |= 0b00000010;	//re-enable channel
 				if (chan2_lengthCounter == 0)
 					chan2_lengthCounter = 64;
+
+				if ((value >> 6) & 0b1 && !((m_channels[1].r[4] >> 6) & 0b1) && chan2_lengthCounter!=64)
+				{
+					int lastDivBit = ((m_clockDivider >> 13) & 0b1);
+					int newDivBit = (((m_clockDivider + 1) >> 13) & 0b1);
+					if (!lastDivBit || newDivBit)
+						chan2_lengthCounter--;
+				}
+
 				uint8_t freqLow = m_channels[1].r[3];
 				uint8_t freqHigh = m_channels[1].r[4] & 0b00000111;
 				uint16_t newFreq = (freqHigh << 8) | freqLow;
@@ -255,7 +274,7 @@ void APU::writeIORegister(uint16_t address, uint8_t value)
 				chan2_volume = ((m_channels[1].r[2] >> 4) & 0b1111);
 				chan2_envelopeTimer = chan2_envelopePeriod;
 
-				if (!(((m_channels[1].r[2]) >> 3) & 0b11111))
+				if ((!(((m_channels[1].r[2]) >> 3) & 0b11111)) || chan2_lengthCounter == 0)
 					NR52 &= 0b11111101;
 			}
 
@@ -282,12 +301,21 @@ void APU::writeIORegister(uint16_t address, uint8_t value)
 			NR52 |= 0b00000100;
 			if (chan3_lengthCounter == 0)
 				chan3_lengthCounter = 256;
+
+			if ((value >> 6) & 0b1 && !((m_channels[2].r[4] >> 6) & 0b1) && chan3_lengthCounter!=256)
+			{
+				int lastDivBit = ((m_clockDivider >> 13) & 0b1);
+				int newDivBit = (((m_clockDivider + 1) >> 13) & 0b1);
+				if (!lastDivBit || newDivBit)
+						chan3_lengthCounter--;
+			}
+
 			uint8_t freqLow = m_channels[2].r[3];
 			uint8_t freqHigh = m_channels[2].r[4] & 0b00000111;
 			uint16_t newFreq = (freqHigh << 8) | freqLow;
 			chan3_freqTimer = (2048 - newFreq) * 2;
 
-			if (!((m_channels[2].r[0] >> 7) & 0b1))
+			if ((!((m_channels[2].r[0] >> 7) & 0b1)) || chan3_lengthCounter==0)
 				NR52 &= 0b11111011;
 
 		}
@@ -323,11 +351,20 @@ void APU::writeIORegister(uint16_t address, uint8_t value)
 			chan4_LFSR = 0xFFFF;
 			if (chan4_lengthCounter == 0)
 				chan4_lengthCounter = 64;
+
+			if ((value >> 6) & 0b1 && !((m_channels[3].r[4] >> 6) & 0b1) && chan4_lengthCounter!=64)
+			{
+				int lastDivBit = ((m_clockDivider >> 13) & 0b1);
+				int newDivBit = (((m_clockDivider + 1) >> 13) & 0b1);
+				if (!lastDivBit || newDivBit)
+						chan4_lengthCounter--;
+			}
+
 			//load frequency timer
 			int divisor = chan4_divisorMapping[chan4_divisorCode];
 			chan4_freqTimer = divisor << chan4_shiftAmount;
 
-			if (!(((m_channels[3].r[2]) >> 3) & 0b11111))
+			if ((!(((m_channels[3].r[2]) >> 3) & 0b11111)) || chan4_lengthCounter==0)
 				NR52 &= 0b11110111;
 
 		}

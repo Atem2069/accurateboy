@@ -45,11 +45,17 @@ void PPU::step()
 
 	if (m_latchingNewMode)	//set new mode to be visible to ppu reads
 	{
-		m_latchingNewMode = false;
-		STAT &= ~0b11;
-		STAT |= (m_newMode & 0b11);
+		m_modeSwitchCycles++;
+		if (m_modeSwitchCycles == 4)
+		{
+			m_latchingNewMode = false;
+			STAT &= ~0b11;
+			STAT |= (m_newMode & 0b11);
+		}
 	}
-	uint8_t curPPUMode = STAT & 0b11;
+	else
+		m_modeSwitchCycles = 0;
+	uint8_t curPPUMode = m_newMode & 0b11;
 
 
 
@@ -129,6 +135,7 @@ void PPU::m_hblank()	//mode 0
 		{
 			m_OAMReadAccessBlocked = true;
 			m_newMode = 2;
+			m2_latchedSprite8x16 = ((LCDC >> 2) & 0b1);
 		}
 	}
 }
@@ -192,6 +199,7 @@ void PPU::m_buggedOAMSearch()	//used when LCD first turns on - no oam scan is do
 
 void PPU::m_OAMSearch()	//mode 2
 {
+	m2_latchedSprite8x16 = m_getSpriteSize();
 	m_comparisonLY = LY;
 	m_VRAMReadAccessBlocked = false; m_OAMReadAccessBlocked = true;
 	m_VRAMWriteAccessBlocked = false; m_OAMWriteAccessBlocked = true;
@@ -210,8 +218,8 @@ void PPU::m_OAMSearch()	//mode 2
 
 		//TODO: 8x16 sprites
 		int scanlineDiff = LY - (tempOAMEntry.y - 16);
-		bool inSpriteBounds = (scanlineDiff < 16 && m_getSpriteSize()) || (scanlineDiff < 8 && !m_getSpriteSize());
-		if (LY >= (tempOAMEntry.y - 16) && inSpriteBounds && (tempOAMEntry.y >= 0) && (tempOAMEntry.y <= 160) && m_spriteBufferIndex<10)
+		bool inSpriteBounds = (scanlineDiff < 16 && m2_latchedSprite8x16) || (scanlineDiff < 8 && !m2_latchedSprite8x16);
+		if (LY >= (tempOAMEntry.y - 16) && inSpriteBounds && (tempOAMEntry.y >= 0) && (tempOAMEntry.y <= 160) && m_spriteBufferIndex < 10)
 			m_spriteBuffer[m_spriteBufferIndex++] = tempOAMEntry;
 
 		m_spritesChecked++;
@@ -477,10 +485,10 @@ void PPU::m_pushToFIFO()
 			int spritePos = m_spriteBuffer[m_consideredSpriteIndex].x;
 			switch (spritePos)
 			{
-			case 0: m_spritePenaltyCycles = 4; break;
-			case 1:m_spritePenaltyCycles = 3; break;
-			case 2:m_spritePenaltyCycles = 2; break;
-			case 3:m_spritePenaltyCycles = 1; break;
+			case 0: m_spritePenaltyCycles = 5; break;
+			case 1:m_spritePenaltyCycles = 4; break;
+			case 2:m_spritePenaltyCycles = 3; break;
+			case 3:m_spritePenaltyCycles = 2; break;
 			}
 			m_modeCycleDiff = 1;
 			m_fetcherStage = FetcherStage::SpriteFetchTileNumber;
@@ -498,9 +506,9 @@ void PPU::m_spriteFetchTileNumber()
 		OAMEntry curSprite = m_spriteBuffer[m_consideredSpriteIndex];
 		bool yFlip = ((curSprite.attributes >> 6) & 0b1);
 		m_spriteTileNumber = curSprite.tileNumber;
+		uint16_t diff = ((LY + 16) - curSprite.y);
 		if (m_getSpriteSize())
 		{
-			uint16_t diff = ((LY + 16) - curSprite.y);
 			if (yFlip)
 				diff = 15 - diff;
 			if (diff >= 8)
@@ -523,6 +531,8 @@ void PPU::m_spriteFetchTileDataLow()
 
 		uint16_t tileDataOffset = m_spriteTileNumber * 16;
 		uint16_t diff = ((LY + 16) - curSprite.y);
+		if (!m_getSpriteSize())
+			diff &= 7;
 		int flipOffset = m_getSpriteSize() ? 15 : 7;
 		if (!yFlip)
 			tileDataOffset += (2 * ((diff % 8)));	//then extract correct row based on ly + scy mod 8
@@ -545,6 +555,8 @@ void PPU::m_spriteFetchTileDataHigh()
 		uint16_t tileDataOffset = m_spriteTileNumber * 16;
 
 		uint16_t diff = ((LY + 16) - curSprite.y);
+		if (!m_getSpriteSize())
+			diff &= 7;
 		int flipOffset = m_getSpriteSize() ? 15 : 7;
 		if (!yFlip)
 			tileDataOffset += (2 * (diff % 8));	//then extract correct row based on ly + scy mod 8
@@ -666,7 +678,6 @@ void PPU::write(uint16_t address, uint8_t value)
 		m_VRAM[address - 0x8000] = value;
 	if (address >= 0xFE00 && address <= 0xFE9F && !m_OAMWriteAccessBlocked)
 		m_OAM[address - 0xFE00] = value;
-
 	switch (address)
 	{
 	case REG_LCDC:
